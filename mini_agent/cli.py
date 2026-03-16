@@ -319,6 +319,14 @@ Examples:
         action="version",
         version="mini-agent 0.1.0",
     )
+    parser.add_argument(
+        "--mode",
+        "-m",
+        type=str,
+        choices=["single", "multi"],
+        default="single",
+        help="Agent mode: single (default) or multi (multi-agent credit scoring)",
+    )
 
     # Subcommands
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
@@ -840,6 +848,160 @@ async def run_agent(workspace_dir: Path, task: str = None):
     # 11. Cleanup MCP connections
     await _quiet_cleanup()
 
+async def run_credit_agent(workspace_dir: Path, task: str = None):
+    """Run multi-agent credit scoring system.
+
+    Args:
+        workspace_dir: Workspace directory path
+        task: If provided, execute this task and exit (non-interactive mode)
+    """
+    from .multi_agent import create_credit_graph
+    from .multi_agent.agents import NumericAgent, SemanticAgent, SupervisorAgent
+    from .multi_agent.state import CreditState
+    from .tools.credit_tools import XGBoostScoreTool, RiskRuleEngineTool, RAGRetrievalTool
+    from .retry import RetryConfig as RetryConfigBase
+
+    # 1. Load configuration
+    config_path = Config.get_default_config_path()
+
+    if not config_path.exists():
+        print(f"{Colors.RED}❌ Configuration file not found{Colors.RESET}")
+        return
+
+    try:
+        config = Config.from_yaml(config_path)
+    except Exception as e:
+        print(f"{Colors.RED}❌ Error loading config: {e}{Colors.RESET}")
+        return
+
+    # 2. Initialize LLM client
+    retry_config = RetryConfigBase(
+        enabled=config.llm.retry.enabled,
+        max_retries=config.llm.retry.max_retries,
+        initial_delay=config.llm.retry.initial_delay,
+        max_delay=config.llm.retry.max_delay,
+        exponential_base=config.llm.retry.exponential_base,
+        retryable_exceptions=(Exception,),
+    )
+
+    provider = LLMProvider.ANTHROPIC if config.llm.provider.lower() == "anthropic" else LLMProvider.OPENAI
+
+    llm_client = LLMClient(
+        api_key=config.llm.api_key,
+        provider=provider,
+        api_base=config.llm.api_base,
+        model=config.llm.model,
+        retry_config=retry_config if config.llm.retry.enabled else None,
+    )
+
+    # 3. Initialize credit tools
+    tools = [
+        XGBoostScoreTool(),
+        RiskRuleEngineTool(),
+        RAGRetrievalTool(),
+    ]
+    print(f"{Colors.GREEN}✅ Loaded credit tools: XGBoost, RuleEngine, RAG{Colors.RESET}")
+
+    # 4. Initialize agents
+    numeric_agent = NumericAgent(llm_client=llm_client, tools=tools)
+    semantic_agent = SemanticAgent(llm_client=llm_client, tools=tools)
+    supervisor_agent = SupervisorAgent(llm_client=llm_client, tools=tools)
+    print(f"{Colors.GREEN}✅ Initialized: NumericAgent, SemanticAgent, SupervisorAgent{Colors.RESET}")
+
+    # 5. Create LangGraph workflow
+    graph = create_credit_graph(
+        numeric_agent=numeric_agent,
+        semantic_agent=semantic_agent,
+        supervisor_agent=supervisor_agent,
+    )
+    print(f"{Colors.GREEN}✅ LangGraph workflow created{Colors.RESET}")
+
+    # 6. Run workflow
+    print_banner_credit()
+
+    if task:
+        # Non-interactive mode
+        print(f"\n{Colors.BRIGHT_BLUE}Credit Agent{Colors.RESET} {Colors.DIM}›{Colors.RESET} {Colors.DIM}Evaluating...{Colors.RESET}\n")
+
+        # Parse task as JSON or text
+        import json
+
+        try:
+            # Try to parse as JSON
+            input_data = json.loads(task)
+        except json.JSONDecodeError:
+            # Use as raw text
+            input_data = {"user_input": task}
+
+        # Build initial state
+        initial_state: CreditState = {
+            "user_input": input_data.get("user_input", task),
+            "user_id": input_data.get("user_id"),
+            "numeric_data": input_data.get("numeric_data"),
+            "text_data": input_data.get("text_data"),
+            "numeric_result": None,
+            "semantic_risk": None,
+            "conflict_detected": False,
+            "conflict_details": None,
+            "audit_result": None,
+            "audit_iterations": 0,
+            "final_decision": "",
+            "decision_reason": "",
+            "trace": [],
+            "errors": [],
+        }
+
+        result = await graph.ainvoke(initial_state)
+
+        # Print results
+        print(f"\n{Colors.BOLD}{Colors.BRIGHT_GREEN}=== Credit Decision ==={Colors.RESET}")
+        print(f"{Colors.BOLD}Decision:{Colors.RESET} {result['final_decision']}")
+        print(f"{Colors.BOLD}Reason:{Colors.RESET} {result['decision_reason']}")
+
+        if result.get("numeric_result"):
+            nr = result["numeric_result"]
+            print(f"\n{Colors.BOLD}Numeric Analysis:{Colors.RESET}")
+            print(f"  Credit Score: {nr.get('credit_score')}")
+            print(f"  Risk Level: {nr.get('risk_level')}")
+
+        if result.get("semantic_risk"):
+            sr = result["semantic_risk"]
+            print(f"\n{Colors.BOLD}Semantic Analysis:{Colors.RESET}")
+            print(f"  Repayment Willingness: {sr.get('repayment_willingness')}")
+            print(f"  Industry Risk: {sr.get('industry_risk')}")
+            if sr.get("fraud_indicators"):
+                print(f"  Fraud Indicators: {', '.join(sr['fraud_indicators'])}")
+
+        if result.get("conflict_detected"):
+            print(f"\n{Colors.BRIGHT_YELLOW}⚠️  Conflict Detected:{Colors.RESET} {result.get('conflict_details')}")
+
+        print(f"\n{Colors.BOLD}Trace:{Colors.RESET}")
+        for t in result["trace"]:
+            print(f"  - {t.get('agent')}: {t.get('action')}")
+
+    else:
+        # Interactive mode (placeholder)
+        print(f"{Colors.BRIGHT_YELLOW}Interactive mode for credit scoring not yet implemented{Colors.RESET}")
+        print(f"{Colors.DIM}Use --task with JSON data to run credit evaluation{Colors.RESET}")
+
+
+def print_banner_credit():
+    """Print credit agent banner."""
+    BOX_WIDTH = 58
+    banner_text = f"{Colors.BOLD}💰 Credit Scoring Multi-Agent System{Colors.RESET}"
+    banner_width = calculate_display_width(banner_text)
+
+    total_padding = BOX_WIDTH - banner_width
+    left_padding = total_padding // 2
+    right_padding = total_padding - left_padding
+
+    print()
+    print(f"{Colors.BOLD}{Colors.BRIGHT_CYAN}╔{'═' * BOX_WIDTH}╗{Colors.RESET}")
+    print(
+        f"{Colors.BOLD}{Colors.BRIGHT_CYAN}║{Colors.RESET}{' ' * left_padding}{banner_text}{' ' * right_padding}{Colors.BOLD}{Colors.BRIGHT_CYAN}║{Colors.RESET}"
+    )
+    print(f"{Colors.BOLD}{Colors.BRIGHT_CYAN}╚{'═' * BOX_WIDTH}╝{Colors.RESET}")
+    print()
 
 def main():
     """Main entry point for CLI"""
@@ -865,8 +1027,13 @@ def main():
     # Ensure workspace directory exists
     workspace_dir.mkdir(parents=True, exist_ok=True)
 
-    # Run the agent (config always loaded from package directory)
-    asyncio.run(run_agent(workspace_dir, task=args.task))
+    # Run the agent based on mode
+    if args.mode == "multi":
+        # Run multi-agent credit scoring system
+        asyncio.run(run_credit_agent(workspace_dir, task=args.task))
+    else:
+        # Run single agent (default)
+        asyncio.run(run_agent(workspace_dir, task=args.task))
 
 
 if __name__ == "__main__":
