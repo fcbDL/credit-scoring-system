@@ -7,10 +7,18 @@ This module provides tools for:
 """
 
 import json
+import os
 from typing import Any, Optional
 from pydantic import BaseModel, Field
 
 from .base import Tool, ToolResult
+
+
+# Default model path
+DEFAULT_MODEL_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+    "data", "GiveMeSomeCredit", "credit_model.json"
+)
 
 
 class XGBoostScoreInput(BaseModel):
@@ -34,14 +42,28 @@ class XGBoostScoreTool(Tool):
     credit score and risk assessment.
     """
 
+    # Feature mapping: user input -> model feature names
+    FEATURE_MAPPING = {
+        "RevolvingUtilizationOfUnsecuredLines": "loan_amount_normalized",  # Will be calculated
+        "age": "age",
+        "NumberOfTime30-59DaysPastDueNotWorse": "past_due_30_59",  # Derived from payment_history
+        "DebtRatio": "debt_to_income_ratio",
+        "MonthlyIncome": "monthly_income",  # income / 12
+        "NumberOfOpenCreditLinesAndLoans": "existing_loans",
+        "NumberOfTimes90DaysLate": "past_due_90",
+        "NumberRealEstateLoansOrLines": "real_estate_loans",
+        "NumberOfDependents": "dependents",  # Will use default
+    }
+
     def __init__(self, model_path: Optional[str] = None):
         """Initialize XGBoost scoring tool.
 
         Args:
             model_path: Path to pre-trained XGBoost model (optional, uses default if None)
         """
-        self.model_path = model_path
+        self.model_path = model_path or DEFAULT_MODEL_PATH
         self._model = None
+        self._model_loaded = False
 
     @property
     def name(self) -> str:
@@ -80,12 +102,105 @@ class XGBoostScoreTool(Tool):
     def _load_model(self):
         """Load XGBoost model (lazy loading)."""
         if self._model is None:
-            # Placeholder: In production, load actual model
-            # import xgboost as xgb
-            # self._model = xgb.Booster()
-            # self._model.load_model(self.model_path or "models/credit_xgboost.json")
-            pass
+            try:
+                import xgboost as xgb
+
+                if not os.path.exists(self.model_path):
+                    print(f"[XGBoost] Model not found at {self.model_path}, using mock score")
+                    self._model_loaded = False
+                    return None
+
+                self._model = xgb.Booster()
+                self._model.load_model(self.model_path)
+                self._model_loaded = True
+                print(f"[XGBoost] Model loaded successfully from {self.model_path}")
+            except Exception as e:
+                print(f"[XGBoost] Failed to load model: {e}, using mock score")
+                self._model_loaded = False
+                self._model = None
         return self._model
+
+    def _map_features(self, data: XGBoostScoreInput) -> dict:
+        """Map user input to model features.
+
+        The GiveMeSomeCredit dataset features:
+        - RevolvingUtilizationOfUnsecuredLines: 循环信用利用率
+        - age: 年龄
+        - NumberOfTime30-59DaysPastDueNotWorse: 30-59天逾期次数
+        - DebtRatio: 负债率
+        - MonthlyIncome: 月收入
+        - NumberOfOpenCreditLinesAndLoans: 开放信用额度数量
+        - NumberOfTimes90DaysLate: 90天以上逾期次数
+        - NumberRealEstateLoansOrLines: 房地产贷款数量
+        - NumberOfTime60-89DaysPastDueNotWorse: 60-89天逾期次数
+        - NumberOfDependents: 家属人数
+        """
+        # Calculate derived features
+        monthly_income = data.income / 12.0
+
+        # Estimate past due from payment_history (inverse relationship)
+        # payment_history 0-1 (1 = perfect), map to past due frequency
+        # Higher payment_history means fewer past due events
+        if data.payment_history >= 0.98:
+            # Excellent: no or very rare late payments
+            past_due_30_59 = 0
+            past_due_60_89 = 0
+            past_due_90 = 0
+        elif data.payment_history >= 0.95:
+            # Very good: rarely late
+            past_due_30_59 = 0
+            past_due_60_89 = 0
+            past_due_90 = 0
+        elif data.payment_history >= 0.9:
+            # Good: occasionally late
+            past_due_30_59 = 0
+            past_due_60_89 = 0
+            past_due_90 = 0
+        elif data.payment_history >= 0.8:
+            # Fair: sometimes late
+            past_due_30_59 = 1
+            past_due_60_89 = 0
+            past_due_90 = 0
+        elif data.payment_history >= 0.5:
+            # Poor: frequently late
+            past_due_30_59 = 2
+            past_due_60_89 = 1
+            past_due_90 = 0
+        else:
+            # Very poor: often severely late
+            past_due_30_59 = 5
+            past_due_60_89 = 3
+            past_due_90 = 2
+
+        # Loan amount normalized by income (approximates revolving utilization)
+        loan_amount_normalized = data.loan_amount / max(data.income, 1) if data.income > 0 else 1.0
+
+        # Map to model features
+        return {
+            "RevolvingUtilizationOfUnsecuredLines": min(loan_amount_normalized, 2.0),  # Cap at 2.0
+            "age": data.age,
+            "NumberOfTime30-59DaysPastDueNotWorse": past_due_30_59,
+            "DebtRatio": data.debt_to_income_ratio,
+            "MonthlyIncome": monthly_income,
+            "NumberOfOpenCreditLinesAndLoans": data.existing_loans + 1,  # +1 for the new loan
+            "NumberOfTimes90DaysLate": past_due_90,
+            "NumberRealEstateLoansOrLines": 0,  # Not provided in user input
+            "NumberOfTime60-89DaysPastDueNotWorse": past_due_60_89,
+            "NumberOfDependents": 0,  # Not provided in user input, use default
+        }
+
+    def _probability_to_score(self, prob_default: float) -> float:
+        """Convert probability of default to credit score (0-100).
+
+        Uses exponential mapping to distribute scores meaningfully:
+        - 0.01 (1%) -> ~93
+        - 0.10 (10%) -> ~70
+        - 0.50 (50%) -> ~30
+        """
+        # Apply sigmoid-like transformation
+        # Higher probability of default -> Lower score
+        score = 100 * (1 - prob_default) ** 0.5
+        return max(0, min(100, score))
 
     async def execute(self, **kwargs) -> ToolResult:
         """Execute XGBoost scoring."""
@@ -93,19 +208,51 @@ class XGBoostScoreTool(Tool):
             # Validate input
             validated = XGBoostScoreInput(**kwargs)
 
-            # Placeholder: In production, run actual model prediction
-            # model = self._load_model()
-            # dmatrix = xgb.DMatrix([validated.model_dump()])
-            # prediction = model.predict(dmatrix)
+            # Try to load and use real model
+            model = self._load_model()
 
-            # Simulated response for development
-            score = self._calculate_mock_score(validated)
-            prob_default = max(0.01, min(0.99, (100 - score) / 100))
+            if model is not None and self._model_loaded:
+                # Use real model for prediction
+                import xgboost as xgb
+
+                # Map user input to model features
+                features = self._map_features(validated)
+
+                # Create DMatrix with feature names in correct order (must match training)
+                feature_names = [
+                    "RevolvingUtilizationOfUnsecuredLines",
+                    "age",
+                    "NumberOfTime30-59DaysPastDueNotWorse",
+                    "DebtRatio",
+                    "MonthlyIncome",
+                    "NumberOfOpenCreditLinesAndLoans",
+                    "NumberOfTimes90DaysLate",
+                    "NumberRealEstateLoansOrLines",
+                    "NumberOfTime60-89DaysPastDueNotWorse",
+                    "NumberOfDependents",
+                ]
+                feature_values = [features.get(f, 0) for f in feature_names]
+                dmatrix = xgb.DMatrix([feature_values], feature_names=feature_names)
+
+                # Predict probability of default
+                prob_default = float(model.predict(dmatrix)[0])
+                prob_default = max(0.001, min(0.999, prob_default))  # Clip to reasonable range
+
+                # Convert to credit score
+                score = self._probability_to_score(prob_default)
+
+                print(f"[XGBoost] Real model prediction: prob_default={prob_default:.4f}, score={score:.1f}")
+            else:
+                # Fallback to mock score
+                print("[XGBoost] Using mock score (model not available)")
+                score = self._calculate_mock_score(validated)
+                prob_default = max(0.01, min(0.99, (100 - score) / 100))
 
             result = {
-                "credit_score": score,
+                "credit_score": round(score, 1),
                 "probability_default": round(prob_default, 4),
                 "risk_level": "low" if score >= 70 else "medium" if score >= 50 else "high",
+                "model_used": "xgboost" if self._model_loaded else "mock",
                 "features_importance": {
                     "payment_history": 0.25,
                     "debt_to_income_ratio": 0.20,
