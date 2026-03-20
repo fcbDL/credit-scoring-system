@@ -1,0 +1,902 @@
+[
+  {
+    "numeric_data": {
+      "age": 58,
+      "income": 4700,
+      "credit_history_length": 40,
+      "debt_to_income_ratio": 0.0808,
+      "employment_length": 36,
+      "loan_amount": 9439,
+      "loan_purpose": "business",
+      "existing_loans": 8,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "申请个人消费贷款，用于购买家电，有稳定工作收入，信用记录良好。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 74,
+      "income": 50000,
+      "credit_history_length": 56,
+      "debt_to_income_ratio": 1,
+      "employment_length": 52,
+      "loan_amount": 87605,
+      "loan_purpose": "personal",
+      "existing_loans": 11,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "申请个人消费贷款，用于购买家电，有稳定工作收入，信用记录良好。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 72,
+      "income": 50000,
+      "credit_history_length": 54,
+      "debt_to_income_ratio": 1,
+      "employment_length": 50,
+      "loan_amount": 149030,
+      "loan_purpose": "personal",
+      "existing_loans": 12,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "我需要贷款用于房屋装修，已签订装修合同，工程预算30万元，自有资金10万元，贷款期限3年，有稳定收入。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 25,
+      "income": 1958,
+      "credit_history_length": 5,
+      "debt_to_income_ratio": 0.0,
+      "employment_length": 3,
+      "loan_amount": 2394,
+      "loan_purpose": "home_improvement",
+      "existing_loans": 0,
+      "payment_history": 0
+    },
+    "text_data": {
+      "application_statement": "我需要贷款用于房屋装修，已签订装修合同，工程预算30万元，自有资金10万元，贷款期限3年，有稳定收入。",
+      "credit_remarks": "有294.0次逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 49,
+      "income": 11489,
+      "credit_history_length": 31,
+      "debt_to_income_ratio": 0.0389,
+      "employment_length": 27,
+      "loan_amount": 13106,
+      "loan_purpose": "personal",
+      "existing_loans": 5,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "我需要贷款用于房屋装修，已签订装修合同，工程预算30万元，自有资金10万元，贷款期限3年，有稳定收入。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 72,
+      "income": 3399,
+      "credit_history_length": 54,
+      "debt_to_income_ratio": 0.1741,
+      "employment_length": 50,
+      "loan_amount": 1947,
+      "loan_purpose": "personal",
+      "existing_loans": 7,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "我需要贷款用于房屋装修，已签订装修合同，工程预算30万元，自有资金10万元，贷款期限3年，有稳定收入。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 22,
+      "income": 4000,
+      "credit_history_length": 4,
+      "debt_to_income_ratio": 0.006,
+      "employment_length": 0,
+      "loan_amount": 10650,
+      "loan_purpose": "business",
+      "existing_loans": 3,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "申请个人消费贷款，用于购买家电，有稳定工作收入，信用记录良好。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 72,
+      "income": 5500,
+      "credit_history_length": 54,
+      "debt_to_income_ratio": 0.192,
+      "employment_length": 50,
+      "loan_amount": 11247,
+      "loan_purpose": "business",
+      "existing_loans": 6,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "我需要贷款用于房屋装修，已签订装修合同，工程预算30万元，自有资金10万元，贷款期限3年，有稳定收入。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 80,
+      "income": 9000,
+      "credit_history_length": 62,
+      "debt_to_income_ratio": 0.3332,
+      "employment_length": 58,
+      "loan_amount": 26986,
+      "loan_purpose": "personal",
+      "existing_loans": 8,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "申请个人消费贷款，用于购买家电，有稳定工作收入，信用记录良好。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 46,
+      "income": 11064,
+      "credit_history_length": 28,
+      "debt_to_income_ratio": 0.2981,
+      "employment_length": 24,
+      "loan_amount": 13780,
+      "loan_purpose": "education",
+      "existing_loans": 7,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "用于个人消费支出，有房产作为保障，收入稳定。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 35,
+      "income": 3700,
+      "credit_history_length": 17,
+      "debt_to_income_ratio": 0.6841,
+      "employment_length": 13,
+      "loan_amount": 8243,
+      "loan_purpose": "education",
+      "existing_loans": 5,
+      "payment_history": 0.8
+    },
+    "text_data": {
+      "application_statement": "申请个人消费贷款，用于购买家电，有稳定工作收入，信用记录良好。",
+      "credit_remarks": "有2.0次逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 41,
+      "income": 8333,
+      "credit_history_length": 23,
+      "debt_to_income_ratio": 0.0077,
+      "employment_length": 19,
+      "loan_amount": 5825,
+      "loan_purpose": "personal",
+      "existing_loans": 2,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "我需要贷款用于房屋装修，已签订装修合同，工程预算30万元，自有资金10万元，贷款期限3年，有稳定收入。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 56,
+      "income": 13249,
+      "credit_history_length": 38,
+      "debt_to_income_ratio": 0.202,
+      "employment_length": 34,
+      "loan_amount": 21380,
+      "loan_purpose": "business",
+      "existing_loans": 10,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "申请个人消费贷款，用于购买家电，有稳定工作收入，信用记录良好。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 51,
+      "income": 1,
+      "credit_history_length": 33,
+      "debt_to_income_ratio": 1,
+      "employment_length": 29,
+      "loan_amount": 0,
+      "loan_purpose": "home_improvement",
+      "existing_loans": 12,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "我需要贷款用于房屋装修，已签订装修合同，工程预算30万元，自有资金10万元，贷款期限3年，有稳定收入。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 47,
+      "income": 8600,
+      "credit_history_length": 29,
+      "debt_to_income_ratio": 0.253,
+      "employment_length": 25,
+      "loan_amount": 10642,
+      "loan_purpose": "personal",
+      "existing_loans": 7,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "用于个人消费支出，有房产作为保障，收入稳定。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 48,
+      "income": 9200,
+      "credit_history_length": 30,
+      "debt_to_income_ratio": 0.2356,
+      "employment_length": 26,
+      "loan_amount": 15199,
+      "loan_purpose": "personal",
+      "existing_loans": 10,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "申请个人消费贷款，用于购买家电，有稳定工作收入，信用记录良好。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 55,
+      "income": 6666,
+      "credit_history_length": 37,
+      "debt_to_income_ratio": 0.2575,
+      "employment_length": 33,
+      "loan_amount": 3603,
+      "loan_purpose": "personal",
+      "existing_loans": 19,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "用于个人消费支出，有房产作为保障，收入稳定。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 29,
+      "income": 3671,
+      "credit_history_length": 11,
+      "debt_to_income_ratio": 1,
+      "employment_length": 7,
+      "loan_amount": 2486,
+      "loan_purpose": "education",
+      "existing_loans": 7,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "申请个人消费贷款，用于购买家电，有稳定工作收入，信用记录良好。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 82,
+      "income": 50000,
+      "credit_history_length": 64,
+      "debt_to_income_ratio": 0.0,
+      "employment_length": 60,
+      "loan_amount": 148649,
+      "loan_purpose": "personal",
+      "existing_loans": 3,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "用于个人消费支出，有房产作为保障，收入稳定。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 81,
+      "income": 7500,
+      "credit_history_length": 63,
+      "debt_to_income_ratio": 0.0,
+      "employment_length": 59,
+      "loan_amount": 21598,
+      "loan_purpose": "education",
+      "existing_loans": 7,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "我需要贷款用于房屋装修，已签订装修合同，工程预算30万元，自有资金10万元，贷款期限3年，有稳定收入。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 36,
+      "income": 1618,
+      "credit_history_length": 18,
+      "debt_to_income_ratio": 0.6504,
+      "employment_length": 14,
+      "loan_amount": 3489,
+      "loan_purpose": "education",
+      "existing_loans": 4,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "我需要贷款用于房屋装修，已签订装修合同，工程预算30万元，自有资金10万元，贷款期限3年，有稳定收入。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 66,
+      "income": 10800,
+      "credit_history_length": 48,
+      "debt_to_income_ratio": 0.4941,
+      "employment_length": 44,
+      "loan_amount": 19226,
+      "loan_purpose": "home_improvement",
+      "existing_loans": 11,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "我需要贷款用于房屋装修，已签订装修合同，工程预算30万元，自有资金10万元，贷款期限3年，有稳定收入。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 38,
+      "income": 6000,
+      "credit_history_length": 18,
+      "debt_to_income_ratio": 0.6531,
+      "employment_length": 16,
+      "loan_amount": 15417,
+      "loan_purpose": "education",
+      "existing_loans": 16,
+      "payment_history": 0.9
+    },
+    "text_data": {
+      "application_statement": "用于个人消费支出，有房产作为保障，收入稳定。",
+      "credit_remarks": "有1.0次逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 59,
+      "income": 4439,
+      "credit_history_length": 41,
+      "debt_to_income_ratio": 0.7403,
+      "employment_length": 37,
+      "loan_amount": 2387,
+      "loan_purpose": "personal",
+      "existing_loans": 23,
+      "payment_history": 0.9
+    },
+    "text_data": {
+      "application_statement": "用于个人消费支出，有房产作为保障，收入稳定。",
+      "credit_remarks": "有1.0次逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 34,
+      "income": 7083,
+      "credit_history_length": 16,
+      "debt_to_income_ratio": 0.9046,
+      "employment_length": 12,
+      "loan_amount": 7389,
+      "loan_purpose": "education",
+      "existing_loans": 7,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "申请个人消费贷款，用于购买家电，有稳定工作收入，信用记录良好。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 49,
+      "income": 10100,
+      "credit_history_length": 29,
+      "debt_to_income_ratio": 0.1494,
+      "employment_length": 27,
+      "loan_amount": 21885,
+      "loan_purpose": "personal",
+      "existing_loans": 5,
+      "payment_history": 0.8
+    },
+    "text_data": {
+      "application_statement": "之前在其他平台借过钱",
+      "credit_remarks": "有2.0次逾期记录"
+    },
+    "label": 1
+  },
+  {
+    "numeric_data": {
+      "age": 67,
+      "income": 50000,
+      "credit_history_length": 49,
+      "debt_to_income_ratio": 1,
+      "employment_length": 45,
+      "loan_amount": 110032,
+      "loan_purpose": "personal",
+      "existing_loans": 5,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "我需要贷款用于房屋装修，已签订装修合同，工程预算30万元，自有资金10万元，贷款期限3年，有稳定收入。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 65,
+      "income": 1153,
+      "credit_history_length": 47,
+      "debt_to_income_ratio": 0.6629,
+      "employment_length": 43,
+      "loan_amount": 609,
+      "loan_purpose": "education",
+      "existing_loans": 6,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "我需要贷款用于房屋装修，已签订装修合同，工程预算30万元，自有资金10万元，贷款期限3年，有稳定收入。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 29,
+      "income": 50000,
+      "credit_history_length": 11,
+      "debt_to_income_ratio": 1,
+      "employment_length": 7,
+      "loan_amount": 58209,
+      "loan_purpose": "home_improvement",
+      "existing_loans": 1,
+      "payment_history": 0.9
+    },
+    "text_data": {
+      "application_statement": "用于个人消费支出，有房产作为保障，收入稳定。",
+      "credit_remarks": "有1.0次逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 80,
+      "income": 6000,
+      "credit_history_length": 62,
+      "debt_to_income_ratio": 0.0242,
+      "employment_length": 58,
+      "loan_amount": 10375,
+      "loan_purpose": "business",
+      "existing_loans": 8,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "用于个人消费支出，有房产作为保障，收入稳定。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 31,
+      "income": 6404,
+      "credit_history_length": 13,
+      "debt_to_income_ratio": 0.0852,
+      "employment_length": 9,
+      "loan_amount": 14017,
+      "loan_purpose": "personal",
+      "existing_loans": 3,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "用于个人消费支出，有房产作为保障，收入稳定。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 40,
+      "income": 3500,
+      "credit_history_length": 22,
+      "debt_to_income_ratio": 0.2476,
+      "employment_length": 18,
+      "loan_amount": 7194,
+      "loan_purpose": "education",
+      "existing_loans": 5,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "我需要贷款用于房屋装修，已签订装修合同，工程预算30万元，自有资金10万元，贷款期限3年，有稳定收入。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 60,
+      "income": 11000,
+      "credit_history_length": 42,
+      "debt_to_income_ratio": 0.523,
+      "employment_length": 38,
+      "loan_amount": 21540,
+      "loan_purpose": "personal",
+      "existing_loans": 15,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "用于个人消费支出，有房产作为保障，收入稳定。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 34,
+      "income": 3144,
+      "credit_history_length": 14,
+      "debt_to_income_ratio": 0.0,
+      "employment_length": 12,
+      "loan_amount": 3197,
+      "loan_purpose": "home_improvement",
+      "existing_loans": 0,
+      "payment_history": 0
+    },
+    "text_data": {
+      "application_statement": "之前在其他平台借过钱",
+      "credit_remarks": "有294.0次逾期记录"
+    },
+    "label": 1
+  },
+  {
+    "numeric_data": {
+      "age": 29,
+      "income": 3600,
+      "credit_history_length": 11,
+      "debt_to_income_ratio": 0.0072,
+      "employment_length": 7,
+      "loan_amount": 4712,
+      "loan_purpose": "business",
+      "existing_loans": 2,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "申请个人消费贷款，用于购买家电，有稳定工作收入，信用记录良好。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 59,
+      "income": 12584,
+      "credit_history_length": 41,
+      "debt_to_income_ratio": 0.2741,
+      "employment_length": 37,
+      "loan_amount": 34210,
+      "loan_purpose": "education",
+      "existing_loans": 14,
+      "payment_history": 0.7
+    },
+    "text_data": {
+      "application_statement": "急需用钱，麻烦快一点",
+      "credit_remarks": "有3.0次逾期记录"
+    },
+    "label": 1
+  },
+  {
+    "numeric_data": {
+      "age": 64,
+      "income": 50000,
+      "credit_history_length": 46,
+      "debt_to_income_ratio": 1,
+      "employment_length": 42,
+      "loan_amount": 133395,
+      "loan_purpose": "business",
+      "existing_loans": 4,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "我需要贷款用于房屋装修，已签订装修合同，工程预算30万元，自有资金10万元，贷款期限3年，有稳定收入。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 53,
+      "income": 3333,
+      "credit_history_length": 35,
+      "debt_to_income_ratio": 1,
+      "employment_length": 31,
+      "loan_amount": 7248,
+      "loan_purpose": "personal",
+      "existing_loans": 9,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "我需要贷款用于房屋装修，已签订装修合同，工程预算30万元，自有资金10万元，贷款期限3年，有稳定收入。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 69,
+      "income": 50000,
+      "credit_history_length": 51,
+      "debt_to_income_ratio": 1,
+      "employment_length": 47,
+      "loan_amount": 69585,
+      "loan_purpose": "personal",
+      "existing_loans": 9,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "申请个人消费贷款，用于购买家电，有稳定工作收入，信用记录良好。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 43,
+      "income": 10000,
+      "credit_history_length": 25,
+      "debt_to_income_ratio": 0.2731,
+      "employment_length": 21,
+      "loan_amount": 26647,
+      "loan_purpose": "personal",
+      "existing_loans": 10,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "我需要贷款用于房屋装修，已签订装修合同，工程预算30万元，自有资金10万元，贷款期限3年，有稳定收入。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 54,
+      "income": 6232,
+      "credit_history_length": 36,
+      "debt_to_income_ratio": 0.1486,
+      "employment_length": 32,
+      "loan_amount": 12425,
+      "loan_purpose": "business",
+      "existing_loans": 7,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "用于个人消费支出，有房产作为保障，收入稳定。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 22,
+      "income": 50000,
+      "credit_history_length": 4,
+      "debt_to_income_ratio": 0.0,
+      "employment_length": 0,
+      "loan_amount": 146556,
+      "loan_purpose": "home_improvement",
+      "existing_loans": 1,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "我需要贷款用于房屋装修，已签订装修合同，工程预算30万元，自有资金10万元，贷款期限3年，有稳定收入。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 30,
+      "income": 5800,
+      "credit_history_length": 12,
+      "debt_to_income_ratio": 0.599,
+      "employment_length": 8,
+      "loan_amount": 12336,
+      "loan_purpose": "business",
+      "existing_loans": 9,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "我需要贷款用于房屋装修，已签订装修合同，工程预算30万元，自有资金10万元，贷款期限3年，有稳定收入。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 53,
+      "income": 12000,
+      "credit_history_length": 35,
+      "debt_to_income_ratio": 0.3956,
+      "employment_length": 31,
+      "loan_amount": 9992,
+      "loan_purpose": "home_improvement",
+      "existing_loans": 12,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "我需要贷款用于房屋装修，已签订装修合同，工程预算30万元，自有资金10万元，贷款期限3年，有稳定收入。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 81,
+      "income": 5263,
+      "credit_history_length": 63,
+      "debt_to_income_ratio": 0.2593,
+      "employment_length": 59,
+      "loan_amount": 15687,
+      "loan_purpose": "home_improvement",
+      "existing_loans": 10,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "申请个人消费贷款，用于购买家电，有稳定工作收入，信用记录良好。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 24,
+      "income": 2500,
+      "credit_history_length": 6,
+      "debt_to_income_ratio": 0.0108,
+      "employment_length": 2,
+      "loan_amount": 6602,
+      "loan_purpose": "business",
+      "existing_loans": 1,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "我需要贷款用于房屋装修，已签订装修合同，工程预算30万元，自有资金10万元，贷款期限3年，有稳定收入。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 46,
+      "income": 5000,
+      "credit_history_length": 28,
+      "debt_to_income_ratio": 0.1066,
+      "employment_length": 24,
+      "loan_amount": 8251,
+      "loan_purpose": "business",
+      "existing_loans": 4,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "用于个人消费支出，有房产作为保障，收入稳定。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 53,
+      "income": 50000,
+      "credit_history_length": 35,
+      "debt_to_income_ratio": 1,
+      "employment_length": 31,
+      "loan_amount": 101867,
+      "loan_purpose": "personal",
+      "existing_loans": 10,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "申请个人消费贷款，用于购买家电，有稳定工作收入，信用记录良好。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 70,
+      "income": 8447,
+      "credit_history_length": 52,
+      "debt_to_income_ratio": 0.3926,
+      "employment_length": 48,
+      "loan_amount": 14537,
+      "loan_purpose": "personal",
+      "existing_loans": 11,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "我需要贷款用于房屋装修，已签订装修合同，工程预算30万元，自有资金10万元，贷款期限3年，有稳定收入。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  },
+  {
+    "numeric_data": {
+      "age": 57,
+      "income": 10000,
+      "credit_history_length": 39,
+      "debt_to_income_ratio": 0.185,
+      "employment_length": 35,
+      "loan_amount": 16834,
+      "loan_purpose": "business",
+      "existing_loans": 18,
+      "payment_history": 1.0
+    },
+    "text_data": {
+      "application_statement": "我需要贷款用于房屋装修，已签订装修合同，工程预算30万元，自有资金10万元，贷款期限3年，有稳定收入。",
+      "credit_remarks": "信用良好，无逾期记录"
+    },
+    "label": 0
+  }
+]
