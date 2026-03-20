@@ -57,8 +57,10 @@ def convert_row(row):
     if pd.isna(late_60_89): late_60_89 = 0
     if pd.isna(late_90): late_90 = 0
 
+    # 限制异常值：逾期次数最多计算 10 次（超过 10 次按 10 次处理）
+    total_late = min(10, late_30_59 + late_60_89 + late_90)
+
     # 计算 payment_history (基于逾期次数)
-    total_late = late_30_59 + late_60_89 + late_90
     payment_history = max(0, 1 - total_late / 10)
     payment_history = round(payment_history, 2)
 
@@ -78,28 +80,44 @@ def convert_row(row):
     # 工作年限：基于年龄，假设 22 岁开始工作
     employment_length = max(0, age - 22)
 
-    # 生成申请文本（基于数据特征）
+    # 生成申请文本（基于数据特征和标签）
     if row.get("SeriousDlqin2yrs") == 1:
         # 违约用户 - 模拟有风险的申请
+        # 特点：信息不完整、描述模糊、可能有多次逾期
         statements = [
             "我需要一笔钱周转，短期就可以还",
             "贷款用于生意资金周转",
             "急需用钱，麻烦快一点",
             "之前在其他平台借过钱",
+            "贷款用于还债",
+            "我需要钱，具体用途不便透露",
+            "申请贷款10万急用",
         ]
+        # 违约用户如果有多次逾期，文本中体现
+        if total_late > 0:
+            statements.append(f"之前有{total_late}次逾期，现在需要资金周转")
     else:
-        # 正常用户 - 模拟正常的申请
+        # 正常用户 - 模拟真实、详细的申请
+        # 特点：信息完整、用处明确、有稳定收入和良好信用
         statements = [
-            "我需要贷款用于房屋装修，已签订装修合同，工程预算30万元，自有资金10万元，贷款期限3年，有稳定收入。",
-            "申请个人消费贷款，用于购买家电，有稳定工作收入，信用记录良好。",
-            "用于个人消费支出，有房产作为保障，收入稳定。",
+            "我需要贷款50万元用于房屋装修，已签订装修合同，工程预算30万元，自有资金10万元，贷款期限3年，有稳定收入。",
+            "申请个人消费贷款30万元，用于购买家电家具，有稳定工作和社保，信用记录良好。",
+            "用于个人综合消费支出，有房产作为保障，收入稳定，准备好了收入证明。",
+            "贷款用于购买一辆汽车，已选中车型，裸车价25万元，自有资金5万元，贷款20万元。",
+            "申请经营贷款100万元用于店铺扩大经营，有营业执照和实体店，流水良好。",
+            "贷款用于教育培训，提升技能，有还款计划。",
+            "申请房屋装修贷款20万元，已签订装修合同，工程预算25万元，自有资金5万元。",
         ]
+        # 正常用户强调信用良好
+        if payment_history >= 0.95:
+            statements.append("个人信用记录良好，从未逾期，本次贷款用途明确，还款来源稳定。")
 
     application_statement = random.choice(statements)
 
-    # 征信备注
-    if total_late > 0:
-        credit_remarks = f"有{total_late}次逾期记录"
+    # 征信备注（使用原始 total_late，但最多显示 10 次）
+    display_late = min(10, late_30_59 + late_60_89 + late_90)
+    if display_late > 0:
+        credit_remarks = f"有{display_late}次逾期记录"
     else:
         credit_remarks = "信用良好，无逾期记录"
 
@@ -132,16 +150,17 @@ def generate_test_data(n_samples=100, output_file="data/test_samples.json"):
         output_file: 输出文件路径
     """
 
-    # 采样（保持正负样本比例）
-    df_sample = df.sample(n=n_samples, random_state=42)
+    # 采样：确保正负样本比例均衡（1:1），方便测试
+    n_positive = n_samples // 2  # 违约样本
+    n_negative = n_samples - n_positive  # 正常样本
 
-    # 分别从违约和正常样本中采样，保持原始比例
-    positive_ratio = df["SeriousDlqin2yrs"].mean()
-    n_positive = int(n_samples * positive_ratio)
-    n_negative = n_samples - n_positive
+    # 优先使用有逾期记录的违约样本
+    df_positive_all = df[df["SeriousDlqin2yrs"] == 1]
+    df_positive = df_positive_all.sample(n=min(n_positive, len(df_positive_all)), random_state=42)
 
-    df_positive = df[df["SeriousDlqin2yrs"] == 1].sample(n=min(n_positive, len(df[df["SeriousDlqin2yrs"] == 1])), random_state=42)
-    df_negative = df[df["SeriousDlqin2yrs"] == 0].sample(n=min(n_negative, len(df[df["SeriousDlqin2yrs"] == 0])), random_state=42)
+    # 正常样本
+    df_negative_all = df[df["SeriousDlqin2yrs"] == 0]
+    df_negative = df_negative_all.sample(n=min(n_negative, len(df_negative_all)), random_state=42)
 
     df_sample = pd.concat([df_positive, df_negative]).sample(frac=1, random_state=42).head(n_samples)
 

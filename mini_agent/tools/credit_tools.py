@@ -490,6 +490,15 @@ class RiskRuleEngineTool(Tool):
                     "reason": f"年收入 {income} 低于1万元门槛",
                 })
 
+            # Rule 5: Existing loans check
+            existing_loans = data.existing_loans
+            if existing_loans > 10:
+                violations.append({
+                    "rule_id": "rule_005",
+                    "status": "review",
+                    "reason": f"现有贷款数 {existing_loans} 过多(>10)，建议人工复核",
+                })
+
             # Determine final action
             reject_count = sum(1 for v in violations if v["status"] == "reject")
             review_count = sum(1 for v in violations if v["status"] == "review")
