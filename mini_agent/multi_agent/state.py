@@ -23,6 +23,37 @@ class SemanticRisk(BaseModel):
     confidence: float = Field(description="Confidence score (0-1)")
 
 
+class CreditReport(BaseModel):
+    """Structured credit evaluation report."""
+
+    report_id: str = Field(description="Report unique ID")
+    evaluation_time: str = Field(description="Evaluation timestamp")
+
+    # Applicant basic info
+    applicant_info: dict[str, Any] = Field(default_factory=dict, description="Applicant basic information")
+
+    # Numeric analysis
+    numeric_analysis: dict[str, Any] = Field(default_factory=dict, description="Numeric score analysis")
+
+    # Semantic analysis
+    semantic_analysis: dict[str, Any] = Field(default_factory=dict, description="Semantic risk analysis")
+
+    # Rule checking
+    rule_results: dict[str, Any] = Field(default_factory=dict, description="Rule check results")
+
+    # Compliance
+    compliance_basis: list[str] = Field(default_factory=list, description="Compliance basis from regulations")
+
+    # Risk warnings
+    risk_warnings: list[str] = Field(default_factory=list, description="Risk warnings")
+
+    # Final decision
+    final_decision: str
+    decision_reason: str
+    overall_score: int
+    risk_level: str
+
+
 class CreditState(TypedDict):
     """LangGraph state for credit scoring workflow.
 
@@ -42,6 +73,9 @@ class CreditState(TypedDict):
     text_data: Optional[dict[str, Any]]
     semantic_risk: Optional[SemanticRisk]
 
+    # Rule checking results
+    rule_result: Optional[dict[str, Any]]
+
     # Conflict handling
     conflict_detected: bool
     conflict_details: Optional[str]
@@ -51,6 +85,9 @@ class CreditState(TypedDict):
     # Final decision
     final_decision: str
     decision_reason: str
+
+    # Structured credit report
+    credit_report: Optional[CreditReport]
 
     # Trace for explainability
     trace: list[dict[str, Any]]

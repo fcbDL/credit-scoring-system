@@ -93,6 +93,21 @@ class NumericAgent:
 
                 if result.success:
                     rule_data = json.loads(result.content)
+                    violations = rule_data.get("violations", [])
+
+                    # Calculate passed rules (all rule names minus failed ones)
+                    failed_rule_ids = {v.get("rule_id") for v in violations if v.get("rule_id")}
+                    all_rule_names = [
+                        "负债率上限", "年龄范围", "信用记录要求", "收入要求"
+                    ]
+                    passed_rule_names = [r for r in all_rule_names if r not in failed_rule_ids]
+
+                    # Store rule result in state
+                    state["rule_result"] = {
+                        "passed": rule_data.get("final_action") == "pass",
+                        "failed_rules": [v.get("description", "") for v in violations],
+                        "passed_rules": passed_rule_names,
+                    }
                     state["trace"].append({
                         "agent": "numeric",
                         "action": "rule_check",

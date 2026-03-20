@@ -70,8 +70,189 @@ def render_trace_visualization(trace: list) -> None:
     st.graphviz_chart(dot)
 
 
-def render_decision_result(result: dict) -> None:
-    """Render decision result with proper styling."""
+def render_credit_report(result: dict) -> None:
+    """Render structured credit evaluation report."""
+    report = result.get("credit_report")
+    if not report:
+        # Fallback to old display
+        render_decision_result_old(result)
+        return
+
+    # Report header
+    st.subheader("📋 信贷评估风控报告")
+
+    # Report metadata
+    col_meta1, col_meta2 = st.columns(2)
+    with col_meta1:
+        st.markdown(f"**🏷️ 报告编号:** {report.get('report_id', 'N/A')}")
+    with col_meta2:
+        st.markdown(f"**📅 评估时间:** {report.get('evaluation_time', 'N/A')}")
+
+    st.divider()
+
+    # 1. Applicant basic info
+    st.markdown("### 📌 一、申请人基本信息")
+    applicant = report.get("applicant_info", {})
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("年龄", f"{applicant.get('age', 'N/A')}岁")
+    with col2:
+        st.metric("年收入", f"¥{applicant.get('income', 0):,}")
+    with col3:
+        st.metric("负债率", f"{applicant.get('debt_to_income_ratio', 0):.1%}")
+    with col4:
+        st.metric("贷款金额", f"¥{applicant.get('loan_amount', 0):,}")
+
+    col5, col6, col7 = st.columns(3)
+    with col5:
+        st.metric("信用历史", f"{applicant.get('credit_history_length', 0)}年")
+    with col6:
+        st.metric("贷款用途", applicant.get("loan_purpose", "N/A"))
+    with col7:
+        st.metric("现有贷款数", applicant.get("existing_loans", 0))
+
+    # 收入与贷款匹配分析
+    loan_to_income = applicant.get("loan_to_income_ratio", 0)
+    if loan_to_income > 0:
+        col_loan, col_ratio = st.columns(2)
+        with col_loan:
+            pass
+        with col_ratio:
+            if loan_to_income <= 2:
+                st.success(f"💚 贷款/收入比: {loan_to_income:.1f}倍 (安全)")
+            elif loan_to_income <= 3:
+                st.warning(f"💛 贷款/收入比: {loan_to_income:.1f}倍 (略高)")
+            else:
+                st.error(f"❤️ 贷款/收入比: {loan_to_income:.1f}倍 (过高)")
+
+    st.divider()
+
+    # 2. Numeric analysis
+    st.markdown("### 📊 二、数值评分分析")
+    numeric = report.get("numeric_analysis", {})
+    score = numeric.get("credit_score", 0)
+    prob = numeric.get("probability_default", 0)
+    risk = numeric.get("risk_level", "unknown")
+
+    col_score1, col_score2 = st.columns([1, 2])
+    with col_score1:
+        st.metric("信用评分", f"{score}/100")
+        st.progress(score / 100)
+    with col_score2:
+        risk_colors = {"low": "green", "medium": "orange", "high": "red"}
+        risk_color = risk_colors.get(risk, "gray")
+        st.markdown(f"**风险等级:** :{risk_color}[{risk.upper()}]")
+        st.markdown(f"**违约概率:** {prob:.2%}")
+
+    # Features importance
+    features = numeric.get("features_importance", {})
+    if features:
+        st.markdown("**关键特征贡献:**")
+        sorted_features = sorted(features.items(), key=lambda x: x[1], reverse=True)
+        for name, importance in sorted_features[:5]:
+            bar_width = int(importance * 20)
+            bar = "█" * bar_width + "░" * (20 - bar_width)
+            st.markdown(f"  {name}: {bar} {importance:.0%}")
+
+    st.divider()
+
+    # 3. Semantic analysis
+    st.markdown("### 🔍 三、语义风险评估")
+    semantic = report.get("semantic_analysis", {})
+    willingness = semantic.get("repayment_willingness", "unknown")
+    industry_risk = semantic.get("industry_risk", "unknown")
+    fraud = semantic.get("fraud_indicators", [])
+    concerns = semantic.get("concerns", [])
+
+    col_sem1, col_sem2 = st.columns(2)
+    with col_sem1:
+        willingness_colors = {"high": "green", "medium": "orange", "low": "red"}
+        st.markdown(f"**还款意愿:** :{willingness_colors.get(willingness, 'gray')}[{willingness.upper()}]")
+    with col_sem2:
+        st.markdown(f"**行业风险:** :{risk_colors.get(industry_risk, 'gray')}[{industry_risk.upper()}]")
+
+    if fraud:
+        st.markdown("**⚠️ 欺诈指标:**")
+        for item in fraud:
+            st.markdown(f"  - {item}")
+    else:
+        st.markdown("**✅ 无欺诈指标**")
+
+    if concerns:
+        st.markdown("**⚡ 风险关注点:**")
+        for item in concerns:
+            st.markdown(f"  - {item}")
+
+    st.divider()
+
+    # 4. Rule results
+    st.markdown("### ⚖️ 四、规则命中情况")
+    rules = report.get("rule_results", {})
+    passed_rules = rules.get("passed_rules", [])
+    failed_rules = rules.get("failed_rules", [])
+
+    if passed_rules:
+        st.markdown("**✅ 通过规则:**")
+        for rule in passed_rules:
+            st.markdown(f"  - {rule}")
+    else:
+        st.markdown("**✅ 暂无通过规则记录**")
+
+    if failed_rules:
+        st.markdown("**❌ 未通过规则:**")
+        for rule in failed_rules:
+            st.markdown(f"  - {rule}")
+    else:
+        st.markdown("**✅ 暂无未通过规则**")
+
+    st.divider()
+
+    # 5. Compliance basis
+    st.markdown("### 📜 五、合规依据")
+    compliance = report.get("compliance_basis", [])
+    if compliance:
+        for item in compliance:
+            st.markdown(f"  - {item}")
+    else:
+        st.markdown("暂无合规依据")
+
+    st.divider()
+
+    # 6. Risk warnings
+    st.markdown("### ⚠️ 六、风险提示")
+    warnings = report.get("risk_warnings", [])
+    if warnings:
+        for item in warnings:
+            if "✓" in item:
+                st.success(item)
+            else:
+                st.warning(item)
+    else:
+        st.info("暂无风险提示")
+
+    st.divider()
+
+    # 7. Final decision
+    decision = report.get("final_decision", "")
+    reason = report.get("decision_reason", "")
+    overall_score = report.get("overall_score", 0)
+    risk_level = report.get("risk_level", "unknown")
+
+    if decision == "approve":
+        st.success(f"## ✅ 批准贷款")
+    elif decision == "reject":
+        st.error(f"## ❌ 拒绝贷款")
+    elif decision == "review":
+        st.warning(f"## ⚠️ 待复核")
+    else:
+        st.info(f"## 📋 {decision}")
+
+    st.markdown(f"**综合评分:** {overall_score}分  |  **风险等级:** {risk_level.upper()}")
+    st.markdown(f"**决策理由:** {reason}")
+
+
+def render_decision_result_old(result: dict) -> None:
+    """Render decision result with proper styling (fallback)."""
     decision = result.get("final_decision", "").lower()
     reason = result.get("decision_reason", "")
     numeric = result.get("numeric_result", {})
@@ -231,7 +412,7 @@ def main():
                 if response.status_code == 200:
                     result = response.json()
                     st.divider()
-                    render_decision_result(result)
+                    render_credit_report(result)
                 else:
                     st.error(f"API 错误: {response.status_code} - {response.text}")
 

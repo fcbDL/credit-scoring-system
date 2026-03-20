@@ -46,6 +46,7 @@ class CreditEvaluateResponse(BaseModel):
     conflict_detected: bool = False
     conflict_details: Optional[str] = None
     trace: list = []
+    credit_report: Optional[dict] = None
 
 
 # Global graph instance (lazy initialization)
@@ -158,6 +159,7 @@ async def evaluate_credit(request: CreditEvaluateRequest):
             conflict_detected=result.get("conflict_detected", False),
             conflict_details=result.get("conflict_details"),
             trace=result.get("trace", []),
+            credit_report=result.get("credit_report"),
         )
 
     except Exception as e:

@@ -5,16 +5,18 @@ This agent is responsible for:
 2. Result aggregation - combining results from sub-agents
 3. Conflict detection - identifying numeric vs semantic conflicts
 4. Decision making - generating final credit decision
-5. Self-reflection - reviewing and improving decisions
+5. Report generation - creating structured credit evaluation report
 """
 
 import json
+import uuid
+from datetime import datetime
 from typing import Optional
 
 from ...llm import LLMClient
 from ...schema import Message
 from ...tools.base import Tool
-from ..state import CreditState
+from ..state import CreditState, CreditReport
 
 
 class SupervisorAgent:
@@ -87,6 +89,10 @@ class SupervisorAgent:
                 "decision": decision["decision"],
                 "reason": decision["reason"],
             })
+
+            # Generate structured credit report
+            report = self._generate_credit_report(state)
+            state["credit_report"] = report
 
         except Exception as e:
             state["errors"].append(f"Supervisor error: {str(e)}")
@@ -276,3 +282,141 @@ class SupervisorAgent:
             "decision": decision,
             "reason": "; ".join(reasons) if reasons else "综合评估通过",
         }
+
+    def _generate_credit_report(self, state: CreditState) -> CreditReport:
+        """Generate structured credit evaluation report."""
+        numeric_data = state.get("numeric_data", {})
+        numeric_result = state.get("numeric_result", {})
+        text_data = state.get("text_data", {})
+        semantic_risk = state.get("semantic_risk", {})
+        rule_result = state.get("rule_result", {})
+        conflict_detected = state.get("conflict_detected", False)
+        conflict_details = state.get("conflict_details", "")
+        final_decision = state.get("final_decision", "")
+        decision_reason = state.get("decision_reason", "")
+
+        # 贷款用途中文映射
+        loan_purpose_map = {
+            "personal": "个人消费",
+            "business": "商业经营",
+            "education": "教育培训",
+            "home_improvement": "房屋装修",
+            "home": "购房",
+            "car": "购车",
+            "medical": "医疗",
+        }
+        loan_purpose = numeric_data.get("loan_purpose", "N/A")
+        loan_purpose_cn = loan_purpose_map.get(loan_purpose, loan_purpose)
+
+        # 收入与贷款匹配分析
+        income = numeric_data.get("income", 0)
+        loan_amount = numeric_data.get("loan_amount", 0)
+        loan_to_income_ratio = loan_amount / income if income > 0 else 0
+
+        # 1. Applicant basic info
+        applicant_info = {
+            "age": numeric_data.get("age", "N/A"),
+            "income": numeric_data.get("income", "N/A"),
+            "credit_history_length": numeric_data.get("credit_history_length", "N/A"),
+            "debt_to_income_ratio": numeric_data.get("debt_to_income_ratio", "N/A"),
+            "employment_length": numeric_data.get("employment_length", "N/A"),
+            "loan_amount": numeric_data.get("loan_amount", "N/A"),
+            "loan_purpose": loan_purpose_cn,
+            "existing_loans": numeric_data.get("existing_loans", "N/A"),
+            "payment_history": numeric_data.get("payment_history", "N/A"),
+            "application_statement": text_data.get("application_statement", "N/A"),
+            "credit_remarks": text_data.get("credit_remarks", "N/A"),
+            "loan_to_income_ratio": round(loan_to_income_ratio, 2),
+        }
+
+        # 2. Numeric analysis
+        numeric_analysis = {
+            "credit_score": numeric_result.get("credit_score", 0),
+            "probability_default": numeric_result.get("probability_default", 0),
+            "risk_level": numeric_result.get("risk_level", "unknown"),
+            "features_importance": numeric_result.get("features_importance", {}),
+        }
+
+        # 3. Semantic analysis
+        semantic_analysis = {
+            "repayment_willingness": semantic_risk.get("repayment_willingness", "unknown"),
+            "industry_risk": semantic_risk.get("industry_risk", "unknown"),
+            "fraud_indicators": semantic_risk.get("fraud_indicators", []),
+            "concerns": semantic_risk.get("concerns", []),
+        }
+
+        # 4. Rule results
+        rule_results = {
+            "passed": rule_result.get("passed", True),
+            "failed_rules": rule_result.get("failed_rules", []),
+            "passed_rules": rule_result.get("passed_rules", []),
+        }
+
+        # 5. Compliance basis
+        compliance_basis = []
+
+        # 收入与贷款匹配分析
+        loan_match_analysis = ""
+        if loan_to_income_ratio > 0:
+            if loan_to_income_ratio <= 2:
+                loan_match_analysis = f"贷款金额/年收入 = {loan_to_income_ratio:.1f}倍，在安全范围内(≤2倍)"
+            elif loan_to_income_ratio <= 3:
+                loan_match_analysis = f"贷款金额/年收入 = {loan_to_income_ratio:.1f}倍，略高但可接受(2-3倍)"
+            else:
+                loan_match_analysis = f"贷款金额/年收入 = {loan_to_income_ratio:.1f}倍，超过合理范围(>3倍)"
+
+        if final_decision == "approve":
+            compliance_basis.extend([
+                "根据《个人贷款管理暂行办法》第七条：贷款人应对借款人提交的材料进行审慎审查，申请人材料齐全，审查通过",
+                "根据《商业银行授信工作尽职指引》：应对借款人还款能力进行综合评估，收入稳定，还款能力充足",
+                "数值评分良好，信用风险可控",
+                loan_match_analysis,
+            ])
+            if not conflict_detected:
+                compliance_basis.append("数值分析与语义分析结论一致，综合评估通过")
+        elif final_decision == "reject":
+            compliance_basis.extend([
+                "根据《个人贷款管理暂行办法》：对不符合贷款条件的申请人应拒绝其申请",
+            ])
+            if len(semantic_risk.get("fraud_indicators", [])) >= 3:
+                compliance_basis.append("语义分析检测到多个欺诈指标，存在重大信贷风险")
+            if loan_to_income_ratio > 3:
+                compliance_basis.append(loan_match_analysis)
+        else:  # review
+            compliance_basis.extend([
+                "根据《商业银行授信工作尽职指引》：对存在疑问的申请应进行进一步核实",
+                "建议补充材料后重新评估",
+            ])
+            if loan_to_income_ratio > 3:
+                compliance_basis.append(loan_match_analysis)
+
+        # 6. Risk warnings
+        risk_warnings = []
+        if conflict_detected:
+            risk_warnings.append(f"⚠️ 数值评分与语义分析存在冲突: {conflict_details}")
+        risk_warnings.extend(semantic_risk.get("fraud_indicators", []))
+        risk_warnings.extend(semantic_risk.get("concerns", []))
+        if not risk_warnings:
+            risk_warnings.append("✓ 本次申请未检测到显著风险点")
+
+        # 7. Overall score and risk level
+        overall_score = int(numeric_result.get("credit_score", 0))
+        risk_level = numeric_result.get("risk_level", "medium")
+
+        report = CreditReport(
+            report_id=str(uuid.uuid4())[:8].upper(),
+            evaluation_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            applicant_info=applicant_info,
+            numeric_analysis=numeric_analysis,
+            semantic_analysis=semantic_analysis,
+            rule_results=rule_results,
+            compliance_basis=compliance_basis,
+            risk_warnings=risk_warnings,
+            final_decision=final_decision,
+            decision_reason=decision_reason,
+            overall_score=overall_score,
+            risk_level=risk_level,
+        )
+
+        # Convert to dict for API response
+        return report.model_dump()
