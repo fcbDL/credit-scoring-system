@@ -30,7 +30,7 @@
 
 ```
 ┌─────────────────────────────────────────┐
-│  XGBoost AUC:  0.85  ████████████  ✅  │
+│  XGBoost AUC:  0.85  ████████████  ✅ │
 │  LR AUC:       0.68  ███████            │
 │  提升:        +24.8%                     │
 └─────────────────────────────────────────┘
@@ -49,7 +49,7 @@
 | 🧠 LLM 备选 | OpenAI GPT-4 / Claude | - | 可切换的备选模型 |
 | 📈 数值模型 | XGBoost | ≥ 2.0 | 信贷评分核心模型 |
 | 🌐 后端框架 | FastAPI | ≥ 0.100 | 高性能 REST API |
-| 🎨 前端框架 | Streamlit | ≥ 1.28 | 交互式 Web 界面 |
+| 🎨 前端框架 | React + Vite | - | 现代响应式 Web 界面 |
 
 ### 数据处理与工具
 
@@ -62,6 +62,7 @@
 
 ### 依赖环境
 
+**后端 (Python)**
 ```
 langgraph>=0.2
 langchain-core>=0.3
@@ -69,9 +70,17 @@ langchain-minimax>=0.1
 xgboost>=2.0
 fastapi>=0.100
 uvicorn>=0.23
-streamlit>=1.28
 pydantic>=2.0
 pyyaml>=6.0
+```
+
+**前端 (Node.js)**
+```
+react>=18
+vite>=5
+tailwindcss>=3
+lucide-react
+axios
 ```
 
 ---
@@ -84,8 +93,8 @@ pyyaml>=6.0
 ┌─────────────────────────────────────────────────────────────────────┐
 │                           客户端层                                  │
 │    ┌─────────────────┐                    ┌─────────────────┐       │
-│    │   Streamlit UI  │                    │    CLI 终端     │       │
-│    │  可视化 + 报告   │                    │   快速验证      │       │
+│    │   React Web UI  │                    │    CLI 终端     │       │
+│    │  表单 + 报告    │                    │   快速验证      │       │
 │    └────────┬────────┘                    └────────┬────────┘       │
 └─────────────┼──────────────────────────────────────┼──────────────────┘
               │                                      │
@@ -95,7 +104,7 @@ pyyaml>=6.0
 │    ┌─────────────────────────────────────────────────────────┐       │
 │    │                    FastAPI 后端                         │       │
 │    │              POST /api/credit/evaluate                  │       │
-│    │              GET  /api/credit/health                    │       │
+│    │              GET  /health                              │       │
 │    └─────────────────────────────────────────────────────────┘       │
 └─────────────────────────────────────────────────────────────────────┘
               │
@@ -116,8 +125,8 @@ pyyaml>=6.0
 ┌─────────────────────────────────────────────────────────────────────┐
 │                           工具层                                     │
 │   ┌────────────────┐  ┌────────────────┐  ┌────────────────┐        │
-│   │  XGBoostScore  │  │ RiskRuleEngine │  │  LLM Client    │        │
-│   │    数值评分     │  │    规则匹配     │  │  语义分析      │        │
+│   │  XGBoostScore │  │ RiskRuleEngine │  │  LLM Client    │        │
+│   │    数值评分    │  │    规则匹配    │  │   语义分析     │        │
 │   └────────────────┘  └────────────────┘  └────────────────┘        │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -130,14 +139,6 @@ pyyaml>=6.0
 | **SemanticAgent** | 语义审计 | 文本材料、备注 | 语义风险等级、风险点 |
 | **SupervisorAgent** | 决策整合 | Agent 分析结果 | 最终决策 + 理由 |
 
-### 数据流
-
-```
-用户输入 ──▶ 数值数据 ──▶ XGBoost ──▶ 风险分数 ──┐
-                                                  ├─▶ 冲突检测 ──▶ Supervisor ──▶ 决策
-        ──▶ 文本数据 ──▶ LLM ──▶ 语义风险 ──────┘
-```
-
 ---
 
 ## 📁 项目结构
@@ -145,53 +146,63 @@ pyyaml>=6.0
 ```bash
 CreditScoringSystem/
 │
-├── mini_agent/                    # 核心代码包
+├── frontend/                      # 🎨 React 前端
+│   ├── src/
+│   │   ├── components/           # React 组件
+│   │   │   ├── CreditForm.tsx      # 申请表单
+│   │   │   ├── CreditReport.tsx    # 评估报告
+│   │   │   └── TraceVisualization.tsx  # 推理链路
+│   │   ├── services/            # API 服务
+│   │   │   └── api.ts
+│   │   ├── types/               # TypeScript 类型
+│   │   │   └── credit.ts
+│   │   └── App.tsx              # 主组件
+│   ├── package.json
+│   └── vite.config.ts
+│
+├── mini_agent/                   # 🐍 Python 后端
 │   │
-│   ├── cli.py                     # 🖥️ CLI 命令行入口
-│   ├── config.py                  # ⚙️ 全局配置加载
-│   ├── logger.py                  # 📝 日志配置
-│   ├── retry.py                   # 🔄 重试策略
+│   ├── cli.py                   # 🖥️ CLI 命令行入口
+│   ├── config.py                # ⚙️ 全局配置加载
+│   ├── logger.py                # 📝 日志配置
+│   ├── retry.py                 # 🔄 重试策略
 │   │
-│   ├── llm/                       # 🤖 LLM 客户端
-│   │   ├── base.py               # 抽象基类
-│   │   ├── llm_wrapper.py        # 统一封装
+│   ├── llm/                     # 🤖 LLM 客户端
+│   │   ├── base.py              # 抽象基类
+│   │   ├── llm_wrapper.py       # 统一封装
 │   │   ├── anthropic_client.py  # Claude 适配
 │   │   └── openai_client.py      # GPT 适配
 │   │
-│   ├── tools/                     # 🔧 工具集
-│   │   ├── credit_tools.py       # 💰 信贷工具
-│   │   │   ├── XGBoostScoreTool      # 数值评分
-│   │   │   ├── RiskRuleEngineTool    # 规则引擎
+│   ├── tools/                   # 🔧 工具集
+│   │   ├── credit_tools.py      # 💰 信贷工具
+│   │   │   ├── XGBoostScoreTool     # 数值评分
+│   │   │   ├── RiskRuleEngineTool   # 规则引擎
 │   │   │   └── RAGRetrievalTool     # RAG 检索
-│   │   ├── bash_tool.py          # 终端命令执行
-│   │   ├── file_tools.py         # 文件操作
-│   │   ├── note_tool.py          # 笔记工具
-│   │   └── skill_tool.py         # 技能加载
+│   │   ├── bash_tool.py         # 终端命令执行
+│   │   ├── file_tools.py        # 文件操作
+│   │   ├── note_tool.py         # 笔记工具
+│   │   └── skill_tool.py        # 技能加载
 │   │
-│   ├── multi_agent/               # 🔄 多智能体系统
-│   │   ├── graph.py              # LangGraph 状态机定义
-│   │   ├── state.py              # 状态类型定义
+│   ├── multi_agent/             # 🔄 多智能体系统
+│   │   ├── graph.py             # LangGraph 状态机定义
+│   │   ├── state.py             # 状态类型定义
 │   │   └── agents/
-│   │       ├── numeric.py        # 📊 数值分析 Agent
-│   │       ├── semantic.py       # 🔍 语义审计 Agent
-│   │       └── supervisor.py     # 🎯 主控决策 Agent
+│   │       ├── numeric.py       # 📊 数值分析 Agent
+│   │       ├── semantic.py      # 🔍 语义审计 Agent
+│   │       └── supervisor.py    # 🎯 主控决策 Agent
 │   │
-│   ├── web/                       # 🌐 Web 服务
-│   │   ├── api.py                # FastAPI 后端
-│   │   └── app.py                # Streamlit 前端
-│   │
-│   └── utils/                     # 🛠️ 工具函数
-│       └── terminal_utils.py     # 终端美化
+│   └── web/                     # 🌐 Web 服务
+│       └── api.py               # FastAPI 后端
 │
-├── data/                          # 📂 数据目录
-│   ├── GiveMeSomeCredit/         # 训练数据
-│   │   ├── cs-training.csv       # 训练集 (12万+样本)
-│   │   └── credit_model.json      # XGBoost 模型文件
-│   └── test_samples.json          # 测试样本
+├── data/                        # 📂 数据目录
+│   ├── GiveMeSomeCredit/       # 训练数据
+│   │   ├── cs-training.csv      # 训练集 (12万+样本)
+│   │   └── credit_model.json    # XGBoost 模型文件
+│   └── test_samples.json        # 测试样本
 │
-├── requirements.txt              # 📦 依赖清单
-├── pyproject.toml                 # 📦 项目配置
-└── README.md                      # 📄 文档
+├── requirements.txt             # 📦 Python 依赖
+├── pyproject.toml               # 📦 项目配置
+└── README.md                    # 📄 文档
 ```
 
 ---
@@ -201,129 +212,78 @@ CreditScoringSystem/
 ### 环境要求
 
 - Python 3.10+
+- Node.js 18+
 - API Key (MiniMax / OpenAI / Anthropic)
 
-### 1️⃣ 安装依赖
+### 1️⃣ 安装后端依赖
 
 ```bash
-# 克隆项目
-git clone https://github.com/your-repo/CreditScoringSystem.git
 cd CreditScoringSystem
-
-# 安装依赖
 pip install -r requirements.txt
 ```
 
-### 2️⃣ 配置
+### 2️⃣ 安装前端依赖
 
 ```bash
-# 复制配置模板
+cd frontend
+npm install
+```
+
+### 3️⃣ 配置
+
+```bash
 cp mini_agent/config/config-example.yaml mini_agent/config/config.yaml
 ```
 
 编辑 `mini_agent/config/config.yaml`：
 
 ```yaml
-# LLM 配置
 llm:
   provider: "minimax"           # 支持: minimax / openai / anthropic
   api_key: "YOUR_API_KEY"       # 填入你的 API Key
-  model: "MiniMax-M2.5"         # 模型名称
+  model: "MiniMax-M2.5"          # 模型名称
 
-# 服务器配置
 server:
   host: "0.0.0.0"
   port: 8000
 ```
 
-### 3️⃣ 启动服务
+### 4️⃣ 启动服务
 
-**方式一：Web 界面（推荐）**
+**后端 + 前端（同时运行）：**
 
 ```bash
-# 启动 FastAPI 后端
+# 终端 1: 启动后端 API
 python -m uvicorn mini_agent.web.api:app --reload --port 8000
 
-# 启动 Streamlit 前端（新终端）
-python -m streamlit run mini_agent/web/app.py
+# 终端 2: 启动前端
+cd frontend && npm run dev
 ```
 
-访问 👉 http://localhost:8501
+访问：
+- 前端界面 👉 http://localhost:5173
+- API 文档 👉 http://localhost:8000/docs
 
-**方式二：CLI 模式**
+### 5️⃣ CLI 模式
 
 ```bash
-# 单次评估
-python -m mini_agent.cli --mode single --task '{
+python -m mini_agent.cli --mode multi --task '{
   "numeric_data": {
     "age": 35,
-    "income": 120000,
-    "loan_amount": 80000,
-    "payment_history": 0.95,
-    "debt_to_income_ratio": 0.25
+    "income": 80000,
+    "credit_history_length": 5,
+    "debt_to_income_ratio": 0.3,
+    "employment_length": 3,
+    "loan_amount": 50000,
+    "loan_purpose": "home",
+    "existing_loans": 1,
+    "payment_history": 0.9
   },
   "text_data": {
     "application_statement": "贷款用于房屋装修",
-    "credit_remarks": "信用记录良好，无逾期"
+    "credit_remarks": "信用良好"
   }
 }'
-```
-
-**方式三：Python API**
-
-```python
-import asyncio
-from mini_agent.multi_agent import create_credit_graph
-from mini_agent.multi_agent.agents import NumericAgent, SemanticAgent, SupervisorAgent
-from mini_agent.tools.credit_tools import XGBoostScoreTool, RiskRuleEngineTool
-from mini_agent.llm import LLMClient
-
-async def evaluate_credit():
-    # 初始化 LLM
-    llm = LLMClient(
-        api_key="your-api-key",
-        provider="minimax",
-        model="MiniMax-M2.5"
-    )
-
-    # 初始化工具
-    tools = [XGBoostScoreTool(), RiskRuleEngineTool()]
-
-    # 创建 Agent
-    numeric_agent = NumericAgent(llm, tools)
-    semantic_agent = SemanticAgent(llm, tools)
-    supervisor_agent = SupervisorAgent(llm, tools)
-
-    # 构建状态机
-    graph = create_credit_graph(
-        numeric_agent,
-        semantic_agent,
-        supervisor_agent
-    )
-
-    # 输入数据
-    user_input = {
-        "numeric_data": {
-            "age": 35,
-            "income": 120000,
-            "loan_amount": 80000,
-            "payment_history": 0.95,
-            "debt_to_income_ratio": 0.25
-        },
-        "text_data": {
-            "application_statement": "贷款用于房屋装修",
-            "credit_remarks": "信用记录良好"
-        }
-    }
-
-    # 执行评估
-    result = await graph.ainvoke({"user_input": user_input})
-
-    # 输出结果
-    print(f"决策: {result['final_decision']}")
-    print(f"理由: {result['reasoning']}")
-
-asyncio.run(evaluate_credit())
 ```
 
 ---
@@ -342,14 +302,18 @@ POST /api/credit/evaluate
 {
   "numeric_data": {
     "age": 35,
-    "income": 120000,
-    "loan_amount": 80000,
-    "payment_history": 0.95,
-    "debt_to_income_ratio": 0.25
+    "income": 80000,
+    "credit_history_length": 5,
+    "debt_to_income_ratio": 0.3,
+    "employment_length": 3,
+    "loan_amount": 50000,
+    "loan_purpose": "home",
+    "existing_loans": 1,
+    "payment_history": 0.9
   },
   "text_data": {
     "application_statement": "贷款用于房屋装修",
-    "credit_remarks": "信用记录良好"
+    "credit_remarks": "信用良好"
   }
 }
 ```
@@ -358,16 +322,28 @@ POST /api/credit/evaluate
 
 ```json
 {
-  "decision": "approved",
-  "risk_level": "low",
-  "xgboost_score": 0.82,
-  "semantic_risk": "low",
-  "rule_violations": [],
-  "report": "经综合评估，该申请人信用风险较低，建议批准贷款申请...",
-  "agent_trace": {
-    "numeric_agent": { "status": "completed", "score": 0.82 },
-    "semantic_agent": { "status": "completed", "risk": "low" },
-    "supervisor_agent": { "status": "completed", "decision": "approved" }
+  "final_decision": "approve",
+  "decision_reason": "综合评估通过",
+  "numeric_result": {
+    "credit_score": 72.5,
+    "probability_default": 0.12,
+    "risk_level": "medium",
+    "features_importance": {...}
+  },
+  "semantic_risk": {
+    "repayment_willingness": "high",
+    "industry_risk": "low",
+    "fraud_indicators": [],
+    "concerns": []
+  },
+  "conflict_detected": false,
+  "trace": [...],
+  "credit_report": {
+    "report_id": "497F28B2",
+    "evaluation_time": "2026-03-23 12:00:00",
+    "overall_score": 72,
+    "final_decision": "approve",
+    ...
   }
 }
 ```
@@ -375,7 +351,7 @@ POST /api/credit/evaluate
 ### 健康检查
 
 ```
-GET /api/credit/health
+GET /health
 ```
 
 ---

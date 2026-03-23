@@ -249,7 +249,7 @@ class SupervisorAgent:
         reasons = []
 
         # Check numeric score
-        credit_score = numeric_result.get("credit_score", 0)
+        credit_score = (numeric_result or {}).get("credit_score", 0)
         if credit_score < 50:
             decision = "reject"
             reasons.append(f"数值评分过低({credit_score})")

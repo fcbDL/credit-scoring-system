@@ -7,6 +7,7 @@ Run with:
 
 import asyncio
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, Any
 import sys
@@ -26,6 +27,15 @@ from mini_agent.config import Config
 from mini_agent.retry import RetryConfig
 
 app = FastAPI(title="信贷评分 API", version="1.0.0")
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # Request/Response models
