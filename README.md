@@ -49,7 +49,8 @@
 | 🧠 LLM 备选 | OpenAI GPT-4 / Claude | - | 可切换的备选模型 |
 | 📈 数值模型 | XGBoost | ≥ 2.0 | 信贷评分核心模型 |
 | 🌐 后端框架 | FastAPI | ≥ 0.100 | 高性能 REST API |
-| 🎨 前端框架 | React + Vite | - | 现代响应式 Web 界面 |
+| 🎨 前端框架 | Streamlit | - | 数据仪表盘，快速原型 |
+| 📊 可视化 | Plotly | - | 评分仪表盘、雷达图、柱状图 |
 
 ### 数据处理与工具
 
@@ -72,15 +73,15 @@ fastapi>=0.100
 uvicorn>=0.23
 pydantic>=2.0
 pyyaml>=6.0
+streamlit>=1.40
+plotly>=5.24
 ```
 
-**前端 (Node.js)**
+**前端 (Python)**
 ```
-react>=18
-vite>=5
-tailwindcss>=3
-lucide-react
-axios
+streamlit
+plotly
+requests
 ```
 
 ---
@@ -93,8 +94,8 @@ axios
 ┌─────────────────────────────────────────────────────────────────────┐
 │                           客户端层                                  │
 │    ┌─────────────────┐                    ┌─────────────────┐       │
-│    │   React Web UI  │                    │    CLI 终端     │       │
-│    │  表单 + 报告    │                    │   快速验证      │       │
+│    │  Streamlit UI   │                    │    CLI 终端     │       │
+│    │  仪表盘 + 报告  │                    │   快速验证      │       │
 │    └────────┬────────┘                    └────────┬────────┘       │
 └─────────────┼──────────────────────────────────────┼──────────────────┘
               │                                      │
@@ -146,19 +147,7 @@ axios
 ```bash
 CreditScoringSystem/
 │
-├── frontend/                      # 🎨 React 前端
-│   ├── src/
-│   │   ├── components/           # React 组件
-│   │   │   ├── CreditForm.tsx      # 申请表单
-│   │   │   ├── CreditReport.tsx    # 评估报告
-│   │   │   └── TraceVisualization.tsx  # 推理链路
-│   │   ├── services/            # API 服务
-│   │   │   └── api.ts
-│   │   ├── types/               # TypeScript 类型
-│   │   │   └── credit.ts
-│   │   └── App.tsx              # 主组件
-│   ├── package.json
-│   └── vite.config.ts
+├── app.py                        # 📊 Streamlit 前端仪表盘
 │
 ├── mini_agent/                   # 🐍 Python 后端
 │   │
@@ -212,24 +201,17 @@ CreditScoringSystem/
 ### 环境要求
 
 - Python 3.10+
-- Node.js 18+
 - API Key (MiniMax / OpenAI / Anthropic)
 
-### 1️⃣ 安装后端依赖
+### 1️⃣ 安装依赖
 
 ```bash
-cd CreditScoringSystem
 pip install -r requirements.txt
+# 或
+pip install streamlit plotly requests
 ```
 
-### 2️⃣ 安装前端依赖
-
-```bash
-cd frontend
-npm install
-```
-
-### 3️⃣ 配置
+### 2️⃣ 配置
 
 ```bash
 cp mini_agent/config/config-example.yaml mini_agent/config/config.yaml
@@ -395,7 +377,7 @@ CUSTOM_RULES = [
 | 冲突检测 | ✅ 完成 | 数值 vs 语义，自动触发审计 |
 | 报告生成 | ✅ 完成 | 结构化风控报告 |
 | FastAPI 服务 | ✅ 完成 | REST API + CORS |
-| React 前端 | ✅ 完成 | 表单 + 报告可视化 |
+| Streamlit 前端 | ✅ 完成 | 数据仪表盘 + 报告可视化 |
 | CLI 工具 | ✅ 完成 | 命令行快速评估 |
 
 ### 技术亮点
@@ -415,26 +397,6 @@ CUSTOM_RULES = [
 | Agent 状态管理 | 使用 LangGraph TypedDict 规范化状态 |
 
 ### 后续开发计划
-
-#### 🔥 前端样式优化（首要任务）
-
-> ⚠️ 当前前端 UI 较为简陋，需要进行以下美化：
-
-| 优化项 | 当前问题 | 优化方案 |
-|--------|----------|----------|
-| **视觉设计** | 样式单调、缺乏层次 | 渐变背景、阴影、圆角卡片 |
-| **配色方案** | 蓝色系单一配色 | 渐变色、语义化配色（红/黄/绿） |
-| **交互动效** | 无动画反馈 | 按钮悬停、加载动画、渐入效果 |
-| **排版布局** | 布局拥挤 | 合理间距、留白、呼吸感 |
-| **暗色模式** | 不支持 | TailwindCSS dark mode |
-| **数据图表** | 纯文字展示 | ECharts 评分仪表盘、特征柱状图 |
-| **响应式** | 移动端适配差 | Flex/Grid 自适应布局 |
-| **图标** | Lucide 图标较少 | 增加装饰性图标、状态图标 |
-
-**目标效果**：
-- 现代感：类似 Linear/Notion 的简洁风格
-- 专业感：金融风控系统的可信度
-- 易用性：清晰的视觉层次、流畅的交互动效
 
 #### 📦 功能完善
 
@@ -456,13 +418,12 @@ CUSTOM_RULES = [
 ### 时间规划（⚠️ 4月15日前完成）
 
 ```
-当前 ←─────── 3月24日 ────────→ 4月15日
+当前 ←─────── 4月1日 ────────→ 4月15日
      │                              │
-已完成 ████░░░░░░░░░          截止线 ││
+已完成 ████████░░░░░░          截止线 ││
                               ││
-[剩余任务 - 共约 3 周]         ││
+[剩余任务 - 共约 2 周]         ││
                               ││
-├── 3/24-3/31: 前端样式优化 ──┤│
 ├── 4/1-4/7:  RAG 知识库完善 ──┤│
 ├── 4/8-4/14: 测试与部署 ─────┤│
 └── 4/15:     论文/演示准备 ──┘│
@@ -470,7 +431,7 @@ CUSTOM_RULES = [
 
 | 阶段 | 时间 | 任务 |
 |------|------|------|
-| **前端优化** | 3/24 - 3/31 | 样式美化、暗色模式、图表可视化 |
+| **前端完成** | 3/24 - 4/1 | Streamlit 仪表盘、评分仪表盘、图表可视化 |
 | **功能完善** | 4/1 - 4/7 | RAG 知识库、批量评估接口 |
 | **收尾测试** | 4/8 - 4/14 | 全面测试、部署文档 |
 | **答辩准备** | 4/15 | 论文定稿、演示准备 |
