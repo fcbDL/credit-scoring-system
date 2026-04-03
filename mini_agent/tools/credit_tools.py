@@ -313,9 +313,118 @@ class RAGRetrievalTool(Tool):
         """Initialize RAG retrieval tool.
 
         Args:
-            knowledge_base_path: Path to knowledge base (optional)
+            knowledge_base_path: Path to knowledge base directory (optional)
         """
-        self.knowledge_base_path = knowledge_base_path
+        self.knowledge_base_path = knowledge_base_path or os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            "data", "knowledge_base"
+        )
+        self._documents = self._load_documents()
+
+    def _load_documents(self) -> list[dict]:
+        """Load knowledge base documents."""
+        documents = []
+
+        if not os.path.exists(self.knowledge_base_path):
+            print(f"[RAG] Knowledge base not found: {self.knowledge_base_path}")
+            return documents
+
+        # Load markdown files
+        for filename in os.listdir(self.knowledge_base_path):
+            if filename.endswith(".md"):
+                filepath = os.path.join(self.knowledge_base_path, filename)
+                try:
+                    with open(filepath, "r", encoding="utf-8") as f:
+                        content = f.read()
+                        # Split by ## headings to get sections
+                        sections = self._parse_sections(content)
+                        for section in sections:
+                            section["source_file"] = filename
+                            documents.append(section)
+                except Exception as e:
+                    print(f"[RAG] Failed to load {filepath}: {e}")
+
+        print(f"[RAG] Loaded {len(documents)} documents from knowledge base")
+        return documents
+
+    def _parse_sections(self, content: str) -> list[dict]:
+        """Parse markdown content into sections."""
+        sections = []
+        lines = content.split("\n")
+
+        current_title = ""
+        current_content = []
+        current_category = "general"
+
+        for line in lines:
+            # Detect category from filename
+            if "regulation" in content[:100].lower():
+                current_category = "regulation"
+            elif "case" in content[:100].lower():
+                current_category = "risk_case"
+
+            # Section headers
+            if line.startswith("## "):
+                # Save previous section
+                if current_title and current_content:
+                    sections.append({
+                        "title": current_title.strip(),
+                        "content": "\n".join(current_content).strip(),
+                        "category": current_category,
+                    })
+
+                current_title = line[3:].strip()
+                current_content = []
+            elif line.startswith("# "):
+                # Document title, skip
+                pass
+            elif line.strip():
+                current_content.append(line)
+
+        # Save last section
+        if current_title and current_content:
+            sections.append({
+                "title": current_title.strip(),
+                "content": "\n".join(current_content).strip(),
+                "category": current_category,
+            })
+
+        return sections
+
+    def _calculate_relevance(self, query: str, doc: dict) -> float:
+        """Calculate relevance score using simple keyword matching."""
+        query_lower = query.lower()
+        query_words = query_lower.split()
+
+        # Combine title and content for matching
+        text = (doc.get("title", "") + " " + doc.get("content", "")).lower()
+
+        # Count query word matches (partial match allowed)
+        matches = 0
+        for word in query_words:
+            if word in text:
+                matches += 1
+            # Also check for partial matches (e.g., "经营" in "经营风险")
+            elif len(word) >= 2:
+                for i in range(len(word)):
+                    if word[i:] in text or word[:i+1] in text:
+                        matches += 0.5
+                        break
+
+        # Calculate score based on matches
+        if matches == 0:
+            return 0.0
+
+        # Boost for title matches
+        title = doc.get("title", "").lower()
+        title_matches = sum(1 for word in query_words if word in title)
+        title_boost = title_matches * 0.5
+
+        # Base score - give higher scores for any match
+        base_score = min(matches / max(len(query_words), 1), 1.0)
+
+        score = base_score * 0.5 + title_boost + 0.2  # Add base score
+        return min(score, 1.0)
 
     @property
     def name(self) -> str:
@@ -349,28 +458,37 @@ class RAGRetrievalTool(Tool):
     async def execute(self, query: str, top_k: int = 5, category: str = "all") -> ToolResult:
         """Execute RAG retrieval."""
         try:
-            # Placeholder: In production, use actual vector DB (Milvus/Chroma)
-            # results = vector_db.search(query, top_k=top_k, filter=category)
+            if not self._documents:
+                return ToolResult(
+                    success=True,
+                    content=json.dumps([], indent=2, ensure_ascii=False),
+                )
 
-            # Simulated response for development
-            results = [
-                {
-                    "title": "个人信贷风险管理指引",
-                    "content": "金融机构应建立完善的个人信贷风险评估体系...",
-                    "source": "银保监会规定",
-                    "relevance": 0.95,
-                },
-                {
-                    "title": "贷款审批合规要求",
-                    "content": "贷款审批应遵循审慎原则，确保借款人具备还款能力...",
-                    "source": "内部合规手册",
-                    "relevance": 0.88,
-                },
-            ]
+            # Filter by category
+            filtered_docs = self._documents
+            if category != "all":
+                filtered_docs = [d for d in self._documents if d.get("category") == category]
+
+            # Calculate relevance scores
+            scored_docs = []
+            for doc in filtered_docs:
+                relevance = self._calculate_relevance(query, doc)
+                if relevance > 0.1:  # Minimum threshold
+                    scored_docs.append({
+                        "title": doc.get("title", ""),
+                        "content": doc.get("content", "")[:500],  # Truncate long content
+                        "source": doc.get("source_file", "knowledge base"),
+                        "category": doc.get("category", "general"),
+                        "relevance": round(relevance, 3),
+                    })
+
+            # Sort by relevance and return top_k
+            scored_docs.sort(key=lambda x: x["relevance"], reverse=True)
+            results = scored_docs[:top_k]
 
             return ToolResult(
                 success=True,
-                content=json.dumps(results[:top_k], indent=2, ensure_ascii=False),
+                content=json.dumps(results, indent=2, ensure_ascii=False),
             )
 
         except Exception as e:
@@ -491,7 +609,7 @@ class RiskRuleEngineTool(Tool):
                 })
 
             # Rule 5: Existing loans check
-            existing_loans = data.existing_loans
+            existing_loans = kwargs.get("existing_loans", 0)
             if existing_loans > 10:
                 violations.append({
                     "rule_id": "rule_005",

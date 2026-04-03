@@ -7,7 +7,7 @@
 ![LangGraph](https://img.shields.io/badge/LangGraph-0.2+-orange.svg)
 ![XGBoost](https://img.shields.io/badge/XGBoost-AUC%200.85-yellow.svg)
 
-**基于 LangGraph + MiniMax 的多智能体协同风控决策系统**
+**基于 LangGraph + LLM 的多智能体协同风控决策系统**
 
 </div>
 
@@ -21,10 +21,11 @@
 |---|---|
 | 🤖 **多智能体协同** | 数值分析 + 语义审计 + 主控决策 三 Agent 协作 |
 | 📊 **XGBoost 评分** | 基于 GiveMeSomeCredit 数据集训练，AUC 达 0.85 |
-| 🔍 **语义风险分析** | 基于 MiniMax LLM 进行文本分析，识别隐性风险 |
-| ⚖️ **规则引擎** | 硬性风控规则自动匹配，支持自定义规则 |
+| 🔍 **语义风险分析** | 基于 LLM 进行文本分析，识别隐性风险 |
+| ⚖️ **规则引擎** | 5 条硬性风控规则自动匹配 |
 | ⚡ **冲突检测** | 数值与语义结果冲突时自动触发二次审计 |
 | 📋 **完整报告** | 自动生成结构化风控报告，含决策理由 |
+| 📚 **RAG 知识库** | 信贷法规 + 风险案例检索，增强语义分析 |
 
 ### 📈 性能指标
 
@@ -45,11 +46,10 @@
 | 类别 | 技术 | 版本 | 说明 |
 |------|------|------|------|
 | 🤖 Agent 框架 | LangGraph | ≥ 0.2 | 基于状态机的多智能体编排框架 |
-| 🧠 大语言模型 | MiniMax | M2.5 | 主推理模型，支持语义分析 |
-| 🧠 LLM 备选 | OpenAI GPT-4 / Claude | - | 可切换的备选模型 |
+| 🧠 大语言模型 | OpenAI/MiniMax/Claude | - | 支持多提供商切换 |
 | 📈 数值模型 | XGBoost | ≥ 2.0 | 信贷评分核心模型 |
 | 🌐 后端框架 | FastAPI | ≥ 0.100 | 高性能 REST API |
-| 🎨 前端框架 | Streamlit | - | 数据仪表盘，快速原型 |
+| 🎨 前端框架 | React + Vite | - | 现代前端框架 |
 | 📊 可视化 | Plotly | - | 评分仪表盘、雷达图、柱状图 |
 
 ### 数据处理与工具
@@ -60,29 +60,7 @@
 | 🔧 配置管理 | PyYAML | YAML 格式配置文件 |
 | 📝 日志 | logging | 自定义日志系统 |
 | 🔄 重试机制 | tenacity | API 调用失败自动重试 |
-
-### 依赖环境
-
-**后端 (Python)**
-```
-langgraph>=0.2
-langchain-core>=0.3
-langchain-minimax>=0.1
-xgboost>=2.0
-fastapi>=0.100
-uvicorn>=0.23
-pydantic>=2.0
-pyyaml>=6.0
-streamlit>=1.40
-plotly>=5.24
-```
-
-**前端 (Python)**
-```
-streamlit
-plotly
-requests
-```
+| 📚 RAG | 关键词检索 | 本地知识库检索 |
 
 ---
 
@@ -94,8 +72,8 @@ requests
 ┌─────────────────────────────────────────────────────────────────────┐
 │                           客户端层                                  │
 │    ┌─────────────────┐                    ┌─────────────────┐       │
-│    │  Streamlit UI   │                    │    CLI 终端     │       │
-│    │  仪表盘 + 报告  │                    │   快速验证      │       │
+│    │   React 前端    │                    │    CLI 终端     │       │
+│    │   localhost:5173│                    │   快速验证      │       │
 │    └────────┬────────┘                    └────────┬────────┘       │
 └─────────────┼──────────────────────────────────────┼──────────────────┘
               │                                      │
@@ -126,8 +104,8 @@ requests
 ┌─────────────────────────────────────────────────────────────────────┐
 │                           工具层                                     │
 │   ┌────────────────┐  ┌────────────────┐  ┌────────────────┐        │
-│   │  XGBoostScore │  │ RiskRuleEngine │  │  LLM Client    │        │
-│   │    数值评分    │  │    规则匹配    │  │   语义分析     │        │
+│   │  XGBoostScore │  │ RiskRuleEngine │  │  RAGRetrieval  │        │
+│   │    数值评分    │  │    规则匹配    │  │    知识库检索  │        │
 │   └────────────────┘  └────────────────┘  └────────────────┘        │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -136,8 +114,8 @@ requests
 
 | Agent | 职责 | 输入 | 输出 |
 |-------|------|------|------|
-| **NumericAgent** | 数值分析 | 结构化信贷数据 | 风险分数、异常指标 |
-| **SemanticAgent** | 语义审计 | 文本材料、备注 | 语义风险等级、风险点 |
+| **NumericAgent** | 数值分析 | 结构化信贷数据 | 风险分数、异常指标、规则匹配 |
+| **SemanticAgent** | 语义审计 | 文本材料 + RAG 检索 | 语义风险等级、风险点 |
 | **SupervisorAgent** | 决策整合 | Agent 分析结果 | 最终决策 + 理由 |
 
 ---
@@ -147,51 +125,59 @@ requests
 ```bash
 CreditScoringSystem/
 │
-├── app.py                        # 📊 Streamlit 前端仪表盘
+├── frontend/                      # 🎨 React 前端
+│   ├── src/
+│   │   ├── App.tsx               # 主应用组件
+│   │   ├── components/           # UI 组件
+│   │   └── api.ts                # API 调用
+│   └── package.json
 │
-├── mini_agent/                   # 🐍 Python 后端
+├── mini_agent/                    # 🐍 Python 后端
 │   │
-│   ├── cli.py                   # 🖥️ CLI 命令行入口
-│   ├── config.py                # ⚙️ 全局配置加载
-│   ├── logger.py                # 📝 日志配置
-│   ├── retry.py                 # 🔄 重试策略
+│   ├── cli.py                    # 🖥️ CLI 命令行入口
+│   ├── config.py                  # ⚙️ 全局配置加载
+│   ├── logger.py                 # 📝 日志配置
+│   ├── retry.py                  # 🔄 重试策略
 │   │
-│   ├── llm/                     # 🤖 LLM 客户端
-│   │   ├── base.py              # 抽象基类
-│   │   ├── llm_wrapper.py       # 统一封装
+│   ├── llm/                      # 🤖 LLM 客户端
+│   │   ├── base.py               # 抽象基类
+│   │   ├── llm_wrapper.py        # 统一封装
 │   │   ├── anthropic_client.py  # Claude 适配
-│   │   └── openai_client.py      # GPT 适配
+│   │   └── openai_client.py      # OpenAI 适配
 │   │
-│   ├── tools/                   # 🔧 工具集
-│   │   ├── credit_tools.py      # 💰 信贷工具
+│   ├── tools/                    # 🔧 工具集
+│   │   ├── credit_tools.py       # 💰 信贷工具
 │   │   │   ├── XGBoostScoreTool     # 数值评分
 │   │   │   ├── RiskRuleEngineTool   # 规则引擎
 │   │   │   └── RAGRetrievalTool     # RAG 检索
-│   │   ├── bash_tool.py         # 终端命令执行
-│   │   ├── file_tools.py        # 文件操作
-│   │   ├── note_tool.py         # 笔记工具
-│   │   └── skill_tool.py        # 技能加载
+│   │   └── ...
 │   │
-│   ├── multi_agent/             # 🔄 多智能体系统
-│   │   ├── graph.py             # LangGraph 状态机定义
-│   │   ├── state.py             # 状态类型定义
+│   ├── multi_agent/              # 🔄 多智能体系统
+│   │   ├── graph.py              # LangGraph 状态机
+│   │   ├── state.py              # 状态类型定义
 │   │   └── agents/
-│   │       ├── numeric.py       # 📊 数值分析 Agent
-│   │       ├── semantic.py      # 🔍 语义审计 Agent
-│   │       └── supervisor.py    # 🎯 主控决策 Agent
+│   │       ├── numeric.py        # 📊 数值分析 Agent
+│   │       ├── semantic.py       # 🔍 语义审计 Agent
+│   │       └── supervisor.py     # 🎯 主控决策 Agent
 │   │
-│   └── web/                     # 🌐 Web 服务
-│       └── api.py               # FastAPI 后端
+│   └── web/                      # 🌐 Web 服务
+│       └── api.py                # FastAPI 后端
 │
-├── data/                        # 📂 数据目录
-│   ├── GiveMeSomeCredit/       # 训练数据
-│   │   ├── cs-training.csv      # 训练集 (12万+样本)
-│   │   └── credit_model.json    # XGBoost 模型文件
+├── data/                         # 📂 数据目录
+│   ├── GiveMeSomeCredit/        # 训练数据
+│   │   ├── cs-training.csv       # 训练集
+│   │   └── credit_model.json    # XGBoost 模型
+│   ├── knowledge_base/          # 📚 RAG 知识库
+│   │   ├── regulations.md       # 信贷法规
+│   │   └── risk_cases.md        # 风险案例
 │   └── test_samples.json        # 测试样本
 │
-├── requirements.txt             # 📦 Python 依赖
-├── pyproject.toml               # 📦 项目配置
-└── README.md                    # 📄 文档
+├── mini_agent/config/
+│   └── config.yaml               # 配置文件
+│
+├── requirements.txt              # 📦 Python 依赖
+├── pyproject.toml                # 📦 项目配置
+└── README.md                     # 📄 文档
 ```
 
 ---
@@ -201,14 +187,17 @@ CreditScoringSystem/
 ### 环境要求
 
 - Python 3.10+
+- Node.js 18+
 - API Key (MiniMax / OpenAI / Anthropic)
 
 ### 1️⃣ 安装依赖
 
 ```bash
+# 后端
 pip install -r requirements.txt
-# 或
-pip install streamlit plotly requests
+
+# 前端
+cd frontend && npm install
 ```
 
 ### 2️⃣ 配置
@@ -221,16 +210,16 @@ cp mini_agent/config/config-example.yaml mini_agent/config/config.yaml
 
 ```yaml
 llm:
-  provider: "minimax"           # 支持: minimax / openai / anthropic
-  api_key: "YOUR_API_KEY"       # 填入你的 API Key
-  model: "MiniMax-M2.5"          # 模型名称
+  provider: "openai"           # 支持: openai / minimax / anthropic
+  api_key: "YOUR_API_KEY"      # 填入你的 API Key
+  model: "gpt-4"               # 模型名称
 
 server:
   host: "0.0.0.0"
   port: 8000
 ```
 
-### 4️⃣ 启动服务
+### 3️⃣ 启动服务
 
 **后端 + 前端（同时运行）：**
 
@@ -246,7 +235,7 @@ cd frontend && npm run dev
 - 前端界面 👉 http://localhost:5173
 - API 文档 👉 http://localhost:8000/docs
 
-### 5️⃣ CLI 模式
+### 4️⃣ CLI 模式
 
 ```bash
 python -m mini_agent.cli --mode multi --task '{
@@ -257,7 +246,7 @@ python -m mini_agent.cli --mode multi --task '{
     "debt_to_income_ratio": 0.3,
     "employment_length": 3,
     "loan_amount": 50000,
-    "loan_purpose": "home",
+    "loan_purpose": "personal",
     "existing_loans": 1,
     "payment_history": 0.9
   },
@@ -289,7 +278,7 @@ POST /api/credit/evaluate
     "debt_to_income_ratio": 0.3,
     "employment_length": 3,
     "loan_amount": 50000,
-    "loan_purpose": "home",
+    "loan_purpose": "personal",
     "existing_loans": 1,
     "payment_history": 0.9
   },
@@ -310,23 +299,21 @@ POST /api/credit/evaluate
     "credit_score": 72.5,
     "probability_default": 0.12,
     "risk_level": "medium",
-    "features_importance": {...}
+    "model_used": "xgboost"
   },
   "semantic_risk": {
     "repayment_willingness": "high",
     "industry_risk": "low",
-    "fraud_indicators": [],
-    "concerns": []
+    "fraud_indicators": []
   },
   "conflict_detected": false,
-  "trace": [...],
-  "credit_report": {
-    "report_id": "497F28B2",
-    "evaluation_time": "2026-03-23 12:00:00",
-    "overall_score": 72,
-    "final_decision": "approve",
-    ...
-  }
+  "trace": [
+    {"node": "supervisor", "action": "plan", "plan": "Invoke numeric and semantic agents"},
+    {"agent": "numeric", "action": "xgboost_score", "result": "Credit score: 74.4"},
+    {"agent": "semantic", "action": "rag_retrieval", "results_count": 3},
+    {"agent": "semantic", "action": "llm_analysis", "result": "..."}
+  ],
+  "credit_report": {...}
 }
 ```
 
@@ -338,32 +325,6 @@ GET /health
 
 ---
 
-## 🔧 自定义配置
-
-### 添加风控规则
-
-编辑 `mini_agent/tools/credit_tools.py` 中的 `RiskRuleEngineTool`：
-
-```python
-CUSTOM_RULES = [
-    {"name": "收入负债比", "condition": "debt_to_income_ratio <= 0.5"},
-    {"name": "年龄限制", "condition": "18 <= age <= 65"},
-    {"name": "贷款金额上限", "condition": "loan_amount <= income * 5"},
-]
-```
-
-### 切换 LLM 模型
-
-修改 `config.yaml` 中的 `llm.provider`：
-
-| Provider | Model |
-|----------|-------|
-| `minimax` | MiniMax-M2.5 |
-| `openai` | gpt-4, gpt-4-turbo |
-| `anthropic` | claude-3-opus, claude-3-sonnet |
-
----
-
 ## 📊 毕设进度汇报
 
 ### 已完成工作
@@ -372,20 +333,22 @@ CUSTOM_RULES = [
 |------|------|------|
 | 多 Agent 编排 | ✅ 完成 | LangGraph 状态机，三 Agent 协同 |
 | XGBoost 评分 | ✅ 完成 | AUC 0.85，GiveMeSomeCredit 数据集 |
-| 规则引擎 | ✅ 完成 | 4 条硬性风控规则 |
-| 语义分析 | ✅ 完成 | MiniMax LLM 文本风险识别 |
+| 规则引擎 | ✅ 完成 | 5 条硬性风控规则 |
+| 语义分析 | ✅ 完成 | LLM 文本风险识别 |
 | 冲突检测 | ✅ 完成 | 数值 vs 语义，自动触发审计 |
 | 报告生成 | ✅ 完成 | 结构化风控报告 |
 | FastAPI 服务 | ✅ 完成 | REST API + CORS |
-| Streamlit 前端 | ✅ 完成 | 数据仪表盘 + 报告可视化 |
+| React 前端 | ✅ 完成 | 现代前端界面 |
 | CLI 工具 | ✅ 完成 | 命令行快速评估 |
+| RAG 知识库 | ✅ 完成 | 关键词检索法规+案例 |
 
 ### 技术亮点
 
 1. **多智能体协同架构**：LangGraph 状态机应用于信贷风控领域
 2. **数值+语义双通道分析**：机器学习与传统规则互补
 3. **冲突检测机制**：自动识别模型与专家知识的分歧
-4. **结构化报告生成**：一键输出合规风控报告
+4. **RAG 知识增强**：结合信贷法规和风险案例进行语义分析
+5. **结构化报告生成**：一键输出合规风控报告
 
 ### 遇到的问题与解决方案
 
@@ -395,44 +358,26 @@ CUSTOM_RULES = [
 | LLM 调用不稳定 | 实现指数退避重试机制 |
 | 前端跨域请求 | 配置 FastAPI CORS 中间件 |
 | Agent 状态管理 | 使用 LangGraph TypedDict 规范化状态 |
-
-### 后续开发计划
-
-#### 📦 功能完善
-
-| 功能 | 说明 |
-|------|------|
-| RAG 知识库 | 接入真实信贷法规知识库 |
-| 评估历史接口 | 数据库存储评估记录 |
-| 批量评估 API | 支持批量导入数据评估 |
-| 性能优化 | 异步处理、缓存机制 |
-
-#### 🔧 模型优化
-
-| 功能 | 说明 |
-|------|------|
-| 模型更新 | 使用最新数据重新训练 |
-| A/B 测试 | 对比不同模型效果 |
-| 阈值调优 | 优化决策阈值 |
+| RAG 匹配不准确 | 优化关键词提取和 relevance 算法 |
 
 ### 时间规划（⚠️ 4月15日前完成）
 
 ```
-当前 ←─────── 4月1日 ────────→ 4月15日
+当前 ←─────── 4月3日 ────────→ 4月15日
      │                              │
-已完成 ████████░░░░░░          截止线 ││
+已完成 ██████████████░░          截止线 ││
                               ││
 [剩余任务 - 共约 2 周]         ││
                               ││
-├── 4/1-4/7:  RAG 知识库完善 ──┤│
-├── 4/8-4/14: 测试与部署 ─────┤│
-└── 4/15:     论文/演示准备 ──┘│
+├── 4/3-4/7:  评估历史/批量API─┤│
+├── 4/8-4/14: 测试与部署 ──────┤│
+└── 4/15:     论文/演示准备 ───┘│
 ```
 
 | 阶段 | 时间 | 任务 |
 |------|------|------|
-| **前端完成** | 3/24 - 4/1 | Streamlit 仪表盘、评分仪表盘、图表可视化 |
-| **功能完善** | 4/1 - 4/7 | RAG 知识库、批量评估接口 |
+| **RAG完成** | 3/24 - 4/3 | RAG 知识库、关键词检索 |
+| **功能完善** | 4/3 - 4/7 | 评估历史、批量评估接口 |
 | **收尾测试** | 4/8 - 4/14 | 全面测试、部署文档 |
 | **答辩准备** | 4/15 | 论文定稿、演示准备 |
 

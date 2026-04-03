@@ -65,8 +65,28 @@ class SemanticAgent:
             rag_results = []
             rag_tool = self.tools.get("rag_retrieval")
             if rag_tool and application_statement:
+                # Extract key risk-related terms for better RAG matching
+                query_terms = []
+                if "逾期" in application_statement or "欠款" in application_statement:
+                    query_terms.append("逾期")
+                if "收入" in application_statement or "工资" in application_statement:
+                    query_terms.append("收入")
+                if "负债" in application_statement or "债务" in application_statement:
+                    query_terms.append("负债率")
+                if "经营" in application_statement or "生意" in application_statement:
+                    query_terms.append("经营风险")
+                if "房产" in application_statement or "抵押" in application_statement:
+                    query_terms.append("抵押担保")
+
+                # Default query if no specific terms found
+                if not query_terms:
+                    query_terms = ["贷款风险", "信贷审批"]
+                else:
+                    query_terms.append("贷款风险")
+
+                query = " ".join(query_terms)
                 rag_result = await rag_tool.execute(
-                    query=f"贷款风险 {application_statement[:100]}",
+                    query=query,
                     top_k=3,
                 )
                 if rag_result.success:
@@ -74,6 +94,7 @@ class SemanticAgent:
                     state["trace"].append({
                         "agent": "semantic",
                         "action": "rag_retrieval",
+                        "query": query,
                         "results_count": len(rag_results),
                     })
 
