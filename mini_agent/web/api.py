@@ -25,6 +25,12 @@ from mini_agent.llm import LLMClient
 from mini_agent.schema import LLMProvider
 from mini_agent.config import Config
 from mini_agent.retry import RetryConfig
+from mini_agent.database import (
+    save_evaluation,
+    get_evaluations,
+    get_evaluation_by_id,
+    get_statistics,
+)
 
 app = FastAPI(title="信贷评分 API", version="1.0.0")
 
@@ -133,8 +139,13 @@ async def health():
 
 
 @app.post("/api/credit/evaluate", response_model=CreditEvaluateResponse)
-async def evaluate_credit(request: CreditEvaluateRequest):
-    """Evaluate credit application."""
+async def evaluate_credit(request: CreditEvaluateRequest, save_record: bool = True):
+    """Evaluate credit application.
+
+    Args:
+        request: Credit evaluation request
+        save_record: Whether to save to database (default True)
+    """
     try:
         # Get graph
         graph = get_graph()
@@ -160,6 +171,27 @@ async def evaluate_credit(request: CreditEvaluateRequest):
         # Run workflow
         result = await graph.ainvoke(initial_state)
 
+        # Save to database if requested
+        if save_record and request.numeric_data:
+            try:
+                numeric_result = result.get("numeric_result", {})
+                save_evaluation(
+                    user_id=request.user_id,
+                    user_input=request.user_input or "贷款申请评估",
+                    numeric_data=request.numeric_data or {},
+                    text_data=request.text_data or {},
+                    final_decision=result.get("final_decision", ""),
+                    decision_reason=result.get("decision_reason", ""),
+                    numeric_result=numeric_result,
+                    semantic_risk=result.get("semantic_risk", {}),
+                    credit_score=numeric_result.get("credit_score", 0),
+                    risk_level=numeric_result.get("risk_level", "unknown"),
+                    conflict_detected=result.get("conflict_detected", False),
+                    trace=result.get("trace", []),
+                )
+            except Exception as db_err:
+                print(f"[DB] Failed to save: {db_err}")
+
         # Return response
         return CreditEvaluateResponse(
             final_decision=result.get("final_decision", ""),
@@ -172,6 +204,46 @@ async def evaluate_credit(request: CreditEvaluateRequest):
             credit_report=result.get("credit_report"),
         )
 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ========== 评估历史 API ==========
+
+@app.get("/api/evaluations")
+async def list_evaluations(
+    limit: int = 50,
+    offset: int = 0,
+    user_id: Optional[str] = None,
+):
+    """Get evaluation history list."""
+    try:
+        evaluations = get_evaluations(limit=limit, offset=offset, user_id=user_id)
+        return {"evaluations": evaluations, "total": len(evaluations)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/evaluations/{eval_id}")
+async def get_evaluation(eval_id: int):
+    """Get evaluation details by ID."""
+    try:
+        evaluation = get_evaluation_by_id(eval_id)
+        if not evaluation:
+            raise HTTPException(status_code=404, detail="Evaluation not found")
+        return evaluation
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/evaluations/statistics")
+async def get_eval_statistics():
+    """Get evaluation statistics."""
+    try:
+        stats = get_statistics()
+        return stats
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
