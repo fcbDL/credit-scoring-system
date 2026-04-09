@@ -49,7 +49,7 @@
 | 🧠 大语言模型 | OpenAI/MiniMax/Claude | - | 支持多提供商切换 |
 | 📈 数值模型 | XGBoost | ≥ 2.0 | 信贷评分核心模型 |
 | 🌐 后端框架 | FastAPI | ≥ 0.100 | 高性能 REST API |
-| 🎨 前端框架 | React + Vite | - | 现代前端框架 |
+| 🎨 前端框架 | Streamlit | - | 数据仪表盘，快速原型 |
 | 📊 可视化 | Plotly | - | 评分仪表盘、雷达图、柱状图 |
 
 ### 数据处理与工具
@@ -72,7 +72,7 @@
 ┌─────────────────────────────────────────────────────────────────────┐
 │                           客户端层                                  │
 │    ┌─────────────────┐                    ┌─────────────────┐       │
-│    │   React 前端    │                    │    CLI 终端     │       │
+│    │  Streamlit 前端  │                    │    CLI 终端     │       │
 │    │   localhost:5173│                    │   快速验证      │       │
 │    └────────┬────────┘                    └────────┬────────┘       │
 └─────────────┼──────────────────────────────────────┼──────────────────┘
@@ -125,12 +125,7 @@
 ```bash
 CreditScoringSystem/
 │
-├── frontend/                      # 🎨 React 前端
-│   ├── src/
-│   │   ├── App.tsx               # 主应用组件
-│   │   ├── components/           # UI 组件
-│   │   └── api.ts                # API 调用
-│   └── package.json
+├── app.py                         # 📊 Streamlit 前端仪表盘
 │
 ├── mini_agent/                    # 🐍 Python 后端
 │   │
@@ -227,12 +222,12 @@ server:
 # 终端 1: 启动后端 API
 python -m uvicorn mini_agent.web.api:app --reload --port 8000
 
-# 终端 2: 启动前端
-cd frontend && npm run dev
+# 终端 2: 启动 Streamlit 前端
+streamlit run app.py
 ```
 
 访问：
-- 前端界面 👉 http://localhost:5173
+- 前端界面 👉 http://localhost:8501
 - API 文档 👉 http://localhost:8000/docs
 
 ### 4️⃣ CLI 模式
@@ -323,6 +318,40 @@ POST /api/credit/evaluate
 GET /health
 ```
 
+### 评估历史接口
+
+```
+GET /api/evaluations?limit=50&offset=0
+```
+
+**响应示例：**
+```json
+{
+  "evaluations": [
+    {"id": 1, "final_decision": "approve", "credit_score": 74.4, "risk_level": "low", "created_at": "2026-04-05 10:00:00"}
+  ],
+  "total": 1
+}
+```
+
+```
+GET /api/evaluations/{eval_id}
+```
+
+```
+GET /api/evaluations/statistics
+```
+
+**响应示例：**
+```json
+{
+  "total": 10,
+  "decisions": {"approve": 7, "reject": 3},
+  "average_credit_score": 68.5,
+  "risk_distribution": {"low": 5, "medium": 3, "high": 2}
+}
+```
+
 ---
 
 ## 📊 毕设进度汇报
@@ -334,13 +363,14 @@ GET /health
 | 多 Agent 编排 | ✅ 完成 | LangGraph 状态机，三 Agent 协同 |
 | XGBoost 评分 | ✅ 完成 | AUC 0.85，GiveMeSomeCredit 数据集 |
 | 规则引擎 | ✅ 完成 | 5 条硬性风控规则 |
-| 语义分析 | ✅ 完成 | LLM 文本风险识别 |
+| 语义分析 | ✅ 完成 | LLM 文本风险识别 + RAG 知识增强 |
 | 冲突检测 | ✅ 完成 | 数值 vs 语义，自动触发审计 |
 | 报告生成 | ✅ 完成 | 结构化风控报告 |
 | FastAPI 服务 | ✅ 完成 | REST API + CORS |
-| React 前端 | ✅ 完成 | 现代前端界面 |
+| Streamlit 前端 | ✅ 完成 | 数据仪表盘 |
 | CLI 工具 | ✅ 完成 | 命令行快速评估 |
 | RAG 知识库 | ✅ 完成 | 关键词检索法规+案例 |
+| 评估历史 | ✅ 完成 | SQLite 存储、统计 API |
 
 ### 技术亮点
 
@@ -363,13 +393,13 @@ GET /health
 ### 时间规划（⚠️ 4月15日前完成）
 
 ```
-当前 ←─────── 4月3日 ────────→ 4月15日
+当前 ←─────── 4月5日 ────────→ 4月15日
      │                              │
-已完成 ██████████████░░          截止线 ││
+已完成 █████████████████░░          截止线 ││
                               ││
-[剩余任务 - 共约 2 周]         ││
+[剩余任务 - 共约 1 周]         ││
                               ││
-├── 4/3-4/7:  评估历史/批量API─┤│
+├── 4/5-4/7:  批量评估 API ───┤│
 ├── 4/8-4/14: 测试与部署 ──────┤│
 └── 4/15:     论文/演示准备 ───┘│
 ```
@@ -377,7 +407,8 @@ GET /health
 | 阶段 | 时间 | 任务 |
 |------|------|------|
 | **RAG完成** | 3/24 - 4/3 | RAG 知识库、关键词检索 |
-| **功能完善** | 4/3 - 4/7 | 评估历史、批量评估接口 |
+| **评估历史** | 4/3 - 4/5 | SQLite 存储、评估历史 API |
+| **批量评估** | 4/5 - 4/7 | 批量导入接口 |
 | **收尾测试** | 4/8 - 4/14 | 全面测试、部署文档 |
 | **答辩准备** | 4/15 | 论文定稿、演示准备 |
 
