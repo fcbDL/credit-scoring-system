@@ -102,6 +102,9 @@ st.markdown("""
         color: #e2e8f0 !important;
         font-weight: 500 !important;
     }
+    div[data-testid="stExpander"] summary {
+        color: #e2e8f0 !important;
+    }
     /* markdown 正文文字 */
     .stMarkdown p, .stMarkdown li, .stMarkdown span {
         color: #e2e8f0 !important;
@@ -222,7 +225,8 @@ def render_agent_trace(trace: list):
         st.info("等待评估...")
     else:
         for i, step in enumerate(trace):
-            with st.expander(f"步骤 {i+1}: {step.get('action', '系统')[:40]}..."):
+            step_label = f"▶ 步骤 {i+1}: {step.get('action', '系统')[:40]}"
+            with st.expander(step_label, expanded=False):
                 if step.get("action"): st.markdown(f"**操作:** {step['action']}")
                 if step.get("result"): st.markdown(f"**结果:** {step['result']}")
                 if step.get("error"): st.markdown(f"**错误:** ❌ {step['error']}")

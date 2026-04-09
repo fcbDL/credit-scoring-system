@@ -73,7 +73,7 @@
 │                           客户端层                                  │
 │    ┌─────────────────┐                    ┌─────────────────┐       │
 │    │  Streamlit 前端  │                    │    CLI 终端     │       │
-│    │   localhost:5173│                    │   快速验证      │       │
+│    │   localhost:8501│                    │   快速验证      │       │
 │    └────────┬────────┘                    └────────┬────────┘       │
 └─────────────┼──────────────────────────────────────┼──────────────────┘
               │                                      │
@@ -182,17 +182,12 @@ CreditScoringSystem/
 ### 环境要求
 
 - Python 3.10+
-- Node.js 18+
 - API Key (MiniMax / OpenAI / Anthropic)
 
 ### 1️⃣ 安装依赖
 
 ```bash
-# 后端
 pip install -r requirements.txt
-
-# 前端
-cd frontend && npm install
 ```
 
 ### 2️⃣ 配置
