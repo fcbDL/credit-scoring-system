@@ -65,6 +65,19 @@ class CreditEvaluateResponse(BaseModel):
     credit_report: Optional[dict] = None
 
 
+class BatchEvaluateRequest(BaseModel):
+    """Batch evaluation request."""
+    applications: list[CreditEvaluateRequest]
+
+
+class BatchEvaluateResponse(BaseModel):
+    """Batch evaluation response."""
+    total: int
+    success: int
+    failed: int
+    results: list[CreditEvaluateResponse]
+
+
 # Global graph instance (lazy initialization)
 _graph = None
 _llm_client = None
@@ -246,6 +259,69 @@ async def get_eval_statistics():
         return stats
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ========== 批量评估 API ==========
+
+@app.post("/api/credit/batch-evaluate", response_model=BatchEvaluateResponse)
+async def batch_evaluate_credit(request: BatchEvaluateRequest):
+    """Batch evaluate multiple credit applications."""
+    results = []
+    success_count = 0
+    failed_count = 0
+
+    graph = get_graph()
+
+    for idx, app in enumerate(request.applications):
+        try:
+            initial_state: CreditState = {
+                "user_input": app.user_input or "批量贷款评估",
+                "user_id": app.user_id,
+                "numeric_data": app.numeric_data,
+                "text_data": app.text_data,
+                "numeric_result": None,
+                "semantic_risk": None,
+                "conflict_detected": False,
+                "conflict_details": None,
+                "audit_result": None,
+                "audit_iterations": 0,
+                "final_decision": "",
+                "decision_reason": "",
+                "trace": [],
+                "errors": [],
+            }
+
+            result = await graph.ainvoke(initial_state)
+
+            results.append(CreditEvaluateResponse(
+                final_decision=result.get("final_decision", ""),
+                decision_reason=result.get("decision_reason", ""),
+                numeric_result=result.get("numeric_result"),
+                semantic_risk=result.get("semantic_risk"),
+                conflict_detected=result.get("conflict_detected", False),
+                conflict_details=result.get("conflict_details"),
+                trace=result.get("trace", []),
+                credit_report=result.get("credit_report"),
+            ))
+            success_count += 1
+
+        except Exception as e:
+            failed_count += 1
+            results.append(CreditEvaluateResponse(
+                final_decision="error",
+                decision_reason=f"评估失败: {str(e)}",
+                numeric_result=None,
+                semantic_risk=None,
+                conflict_detected=False,
+                trace=[],
+            ))
+
+    return BatchEvaluateResponse(
+        total=len(request.applications),
+        success=success_count,
+        failed=failed_count,
+        results=results,
+    )
 
 
 if __name__ == "__main__":

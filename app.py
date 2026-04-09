@@ -554,24 +554,291 @@ def main():
 
     render_header()
 
-    col_left, col_right = st.columns([1, 2])
+    # 创建标签页
+    tab1, tab2, tab3 = st.tabs(["📝 单笔评估", "📚 批量评估", "📊 评估历史"])
 
-    with col_left:
-        render_agent_trace(st.session_state.trace)
+    with tab1:
+        col_left, col_right = st.columns([1, 2])
 
-    with col_right:
-        form_data = render_decision_console(st.session_state.result)
-        if form_data:
-            with st.spinner("🤖 AI 正在分析，多智能体协同决策中..."):
-                result = call_api("/api/credit/evaluate", form_data)
-                if result:
-                    st.session_state.result = result
-                    st.session_state.trace = result.get("trace", [])
-                    st.rerun()
+        with col_left:
+            render_agent_trace(st.session_state.trace)
 
-        # 报告放在中间面板下方
-        if st.session_state.result:
-            render_ai_report(st.session_state.result)
+        with col_right:
+            form_data = render_decision_console(st.session_state.result)
+            if form_data:
+                with st.spinner("🤖 AI 正在分析，多智能体协同决策中..."):
+                    result = call_api("/api/credit/evaluate", form_data)
+                    if result:
+                        st.session_state.result = result
+                        st.session_state.trace = result.get("trace", [])
+                        st.rerun()
+
+            # 报告放在中间面板下方
+            if st.session_state.result:
+                render_ai_report(st.session_state.result)
+
+    with tab2:
+        st.markdown("### 📚 批量贷款评估")
+        st.info("支持表单添加或 JSON 批量导入")
+
+        # 创建两个子标签页
+        sub_tab1, sub_tab2 = st.tabs(["📝 表单添加", "📁 JSON 导入"])
+
+        with sub_tab1:
+            # 初始化批量申请列表
+            if 'batch_applications' not in st.session_state:
+                st.session_state.batch_applications = []
+
+            # 添加新申请表单
+            with st.expander("➕ 添加贷款申请", expanded=True):
+                col1, col2 = st.columns(2)
+                with col1:
+                    batch_age = st.number_input("年龄", 18, 100, 35, key="batch_age")
+                    batch_income = st.number_input("年收入 (¥)", 0, 10000000, 80000, 1000, key="batch_income")
+                    batch_credit_history = st.number_input("信用历史 (年)", 0, 50, 5, key="batch_credit")
+                    batch_debt_ratio = st.slider("负债率", 0.0, 1.0, 0.3, 0.01, key="batch_debt")
+                with col2:
+                    batch_employment = st.number_input("工作年限 (年)", 0, 50, 3, key="batch_emp")
+                    batch_loan_amount = st.number_input("贷款金额 (¥)", 0, 10000000, 50000, 1000, key="batch_loan")
+                    batch_existing_loans = st.number_input("现有贷款数", 0, 20, 1, key="batch_loans")
+                    batch_payment = st.slider("还款历史", 0.0, 1.0, 0.9, 0.01, key="batch_payment")
+
+                batch_loan_purpose = st.selectbox("贷款用途", ["personal", "business", "education", "home"], key="batch_purpose")
+
+                if st.button("➕ 添加到列表", use_container_width=True):
+                    st.session_state.batch_applications.append({
+                        "age": batch_age,
+                        "income": batch_income,
+                        "credit_history_length": batch_credit_history,
+                        "debt_to_income_ratio": batch_debt_ratio,
+                        "employment_length": batch_employment,
+                        "loan_amount": batch_loan_amount,
+                        "loan_purpose": batch_loan_purpose,
+                        "existing_loans": batch_existing_loans,
+                        "payment_history": batch_payment,
+                    })
+                    st.success(f"已添加申请 #{len(st.session_state.batch_applications)}")
+
+            # 显示已添加的申请列表
+            if st.session_state.batch_applications:
+                st.markdown("#### 📋 待评估申请列表")
+                for i, app in enumerate(st.session_state.batch_applications):
+                    col1, col2, col3, col4 = st.columns([1, 2, 2, 1])
+                    with col1:
+                        st.markdown(f"**申请 #{i+1}**")
+                    with col2:
+                        st.caption(f"年龄: {app['age']} | 收入: ¥{app['income']:,}")
+                    with col3:
+                        st.caption(f"贷款: ¥{app['loan_amount']:,} | 负债率: {app['debt_to_income_ratio']:.0%}")
+                    with col4:
+                        if st.button("🗑️", key=f"del_{i}"):
+                            st.session_state.batch_applications.pop(i)
+                            st.rerun()
+
+                st.markdown("---")
+
+                # 批量评估按钮
+                if st.button("🚀 批量评估", type="primary", use_container_width=True):
+                    # 转换格式
+                    applications = []
+                    for app in st.session_state.batch_applications:
+                        applications.append({
+                            "numeric_data": app,
+                            "text_data": {}
+                        })
+
+                    api_data = {"applications": applications}
+
+                    with st.spinner(f"🔄 正在评估 {len(applications)} 条申请..."):
+                        try:
+                            response = requests.post(
+                                f"{API_BASE_URL}/api/credit/batch-evaluate",
+                                json=api_data,
+                                timeout=300
+                            )
+
+                            if response.status_code == 200:
+                                result = response.json()
+                                st.session_state.batch_results = result
+                                st.session_state.batch_applications = []
+                            else:
+                                st.error(f"评估失败: {response.status_code}")
+                        except Exception as e:
+                            st.error(f"❌ 请求失败: {str(e)}")
+            else:
+                st.info("👆 请在上方添加贷款申请")
+
+        with sub_tab2:
+            st.markdown("#### 📁 JSON 批量导入")
+            st.caption("企业用户可粘贴 JSON 数据批量导入")
+
+            # 提供示例 JSON 供复制
+            sample_json = [
+                {"age": 35, "income": 80000, "credit_history_length": 5, "debt_to_income_ratio": 0.3, "employment_length": 3, "loan_amount": 50000, "loan_purpose": "personal", "existing_loans": 1, "payment_history": 0.9},
+                {"age": 28, "income": 60000, "credit_history_length": 3, "debt_to_income_ratio": 0.4, "employment_length": 2, "loan_amount": 30000, "loan_purpose": "business", "existing_loans": 2, "payment_history": 0.8},
+                {"age": 45, "income": 120000, "credit_history_length": 10, "debt_to_income_ratio": 0.2, "employment_length": 8, "loan_amount": 100000, "loan_purpose": "home", "existing_loans": 0, "payment_history": 0.95}
+            ]
+
+            st.markdown("**📋 字段说明：**")
+            st.markdown("""
+            - `age`: 年龄 (18-100)
+            - `income`: 年收入 (元)
+            - `credit_history_length`: 信用历史 (年)
+            - `debt_to_income_ratio`: 负债率 (0-1)
+            - `employment_length`: 工作年限 (年)
+            - `loan_amount`: 贷款金额 (元)
+            - `loan_purpose`: 用途 (personal/business/education/home)
+            - `existing_loans`: 现有贷款数
+            - `payment_history`: 还款历史 (0-1)
+            """)
+
+            import json
+            batch_json = st.text_area(
+                "粘贴 JSON 数据",
+                value=json.dumps(sample_json, indent=2, ensure_ascii=False),
+                height=200
+            )
+
+            if st.button("📥 导入并评估", type="primary", use_container_width=True):
+                try:
+                    raw_data = json.loads(batch_json)
+
+                    # 验证并转换格式
+                    applications = []
+                    for app in raw_data:
+                        # 验证必填字段
+                        required = ["age", "income", "credit_history_length", "debt_to_income_ratio", "employment_length", "loan_amount", "loan_purpose", "existing_loans", "payment_history"]
+                        missing = [f for f in required if f not in app]
+                        if missing:
+                            st.error(f"申请数据缺少字段: {missing}")
+                            break
+
+                        applications.append({
+                            "numeric_data": app,
+                            "text_data": {}
+                        })
+                    else:
+                        api_data = {"applications": applications}
+                        with st.spinner(f"🔄 正在评估 {len(applications)} 条申请..."):
+                            response = requests.post(
+                                f"{API_BASE_URL}/api/credit/batch-evaluate",
+                                json=api_data,
+                                timeout=300
+                            )
+
+                            if response.status_code == 200:
+                                result = response.json()
+                                st.session_state.batch_results = result
+                                st.success("✅ 批量导入成功！")
+                            else:
+                                st.error(f"评估失败: {response.status_code}")
+
+                except json.JSONDecodeError:
+                    st.error("❌ JSON 格式错误，请检查")
+                except Exception as e:
+                    st.error(f"❌ 错误: {str(e)}")
+
+        # 显示批量评估结果（两个子标签页共享）
+        if 'batch_results' in st.session_state and st.session_state.batch_results:
+            result = st.session_state.batch_results
+            st.markdown("---")
+            st.markdown("#### 📊 批量评估结果")
+
+            # 统计卡片 - 友好展示
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("📄 总申请", result["total"])
+            with col2:
+                st.success(f"✅ 通过 {result['success']}")
+            with col3:
+                st.error(f"❌ 拒绝 {result['failed']}")
+            with col4:
+                rate = result['success'] / max(result['total'], 1) * 100
+                st.metric("📈 通过率", f"{rate:.0f}%")
+
+            # 结果表格 - 友好展示
+            st.markdown("#### 📋 评估详情")
+
+            for i, r in enumerate(result["results"]):
+                numeric_result = r.get("numeric_result") or {}
+                score = numeric_result.get("credit_score", 0)
+                risk_level = numeric_result.get("risk_level", "unknown")
+                decision = r["final_decision"]
+                reason = r.get("decision_reason", "")
+
+                # 卡片式展示
+                if decision == "approve":
+                    bg_color = "rgba(34, 197, 94, 0.1)"
+                    border_color = "#22c55e"
+                    icon = "✅"
+                    status_text = "通过"
+                else:
+                    bg_color = "rgba(239, 68, 68, 0.1)"
+                    border_color = "#ef4444"
+                    icon = "❌"
+                    status_text = "拒绝"
+
+                # 风险等级
+                risk_text = {"low": "低风险", "medium": "中等风险", "high": "高风险"}
+                risk_label = risk_text.get(risk_level, risk_level)
+
+                st.markdown(f"""
+                <div style="background: {bg_color}; border: 1px solid {border_color}; border-radius: 12px; padding: 16px; margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span style="font-size: 18px; font-weight: bold;">{icon} 申请 #{i+1} - {status_text}</span>
+                            <span style="color: #64748b; margin-left: 12px;">{reason}</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 24px; font-weight: bold; color: {border_color};">{score:.0f} 分</div>
+                            <div style="font-size: 12px; color: #64748b;">{risk_label}</div>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            # 清除结果按钮
+            if st.button("🔄 重新评估", use_container_width=True):
+                st.session_state.batch_results = None
+                st.rerun()
+
+    with tab3:
+        st.markdown("### 📊 评估历史")
+
+        try:
+            response = requests.get(f"{API_BASE_URL}/api/evaluations?limit=20", timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                evaluations = data.get("evaluations", [])
+
+                if evaluations:
+                    # 显示统计
+                    stats_response = requests.get(f"{API_BASE_URL}/api/evaluations/statistics", timeout=10)
+                    if stats_response.status_code == 200:
+                        stats = stats_response.json()
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric("总评估数", stats.get("total", 0))
+                        with col2:
+                            avg = stats.get("average_credit_score", 0)
+                            st.metric("平均评分", f"{avg:.1f}")
+                        with col3:
+                            decisions = stats.get("decisions", {})
+                            approve_rate = decisions.get("approve", 0) / max(decisions.get("total", 1), 1) * 100
+                            st.metric("通过率", f"{approve_rate:.1f}%")
+
+                    st.markdown("#### 📝 最近评估记录")
+                    for e in evaluations:
+                        score = e.get("credit_score", "N/A")
+                        decision = e.get("final_decision", "unknown")
+                        color = "🟢" if decision == "approve" else "🔴"
+                        st.markdown(f"{color} **{decision.upper()}** | 评分: {score} | 时间: {e.get('created_at', 'N/A')}")
+                else:
+                    st.info("暂无评估记录")
+            else:
+                st.error("获取历史失败")
+        except Exception as e:
+            st.error(f"❌ 连接失败: {str(e)}")
 
 
 if __name__ == "__main__":
