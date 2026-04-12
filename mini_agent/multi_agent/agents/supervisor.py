@@ -337,12 +337,13 @@ class SupervisorAgent:
             "features_importance": numeric_result.get("features_importance", {}),
         }
 
-        # 3. Semantic analysis
+        # 3. Semantic analysis (handle None)
+        semantic_risk_safe = semantic_risk or {}
         semantic_analysis = {
-            "repayment_willingness": semantic_risk.get("repayment_willingness", "unknown"),
-            "industry_risk": semantic_risk.get("industry_risk", "unknown"),
-            "fraud_indicators": semantic_risk.get("fraud_indicators", []),
-            "concerns": semantic_risk.get("concerns", []),
+            "repayment_willingness": semantic_risk_safe.get("repayment_willingness", "unknown"),
+            "industry_risk": semantic_risk_safe.get("industry_risk", "unknown"),
+            "fraud_indicators": semantic_risk_safe.get("fraud_indicators", []),
+            "concerns": semantic_risk_safe.get("concerns", []),
         }
 
         # 4. Rule results
@@ -378,7 +379,7 @@ class SupervisorAgent:
             compliance_basis.extend([
                 "根据《个人贷款管理暂行办法》：对不符合贷款条件的申请人应拒绝其申请",
             ])
-            if len(semantic_risk.get("fraud_indicators", [])) >= 3:
+            if len(semantic_risk_safe.get("fraud_indicators", [])) >= 3:
                 compliance_basis.append("语义分析检测到多个欺诈指标，存在重大信贷风险")
             if loan_to_income_ratio > 3:
                 compliance_basis.append(loan_match_analysis)
@@ -394,8 +395,8 @@ class SupervisorAgent:
         risk_warnings = []
         if conflict_detected:
             risk_warnings.append(f"⚠️ 数值评分与语义分析存在冲突: {conflict_details}")
-        risk_warnings.extend(semantic_risk.get("fraud_indicators", []))
-        risk_warnings.extend(semantic_risk.get("concerns", []))
+        risk_warnings.extend(semantic_risk_safe.get("fraud_indicators", []))
+        risk_warnings.extend(semantic_risk_safe.get("concerns", []))
         if not risk_warnings:
             risk_warnings.append("✓ 本次申请未检测到显著风险点")
 
